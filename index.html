@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meteor Shower Prediction System | 3D Visualization</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+</head>
+<body>
+    <div id="loading-screen">
+        <div class="loader-content">
+            <div class="meteor-icon">☄️</div>
+            <h1>COSMIC METEOR ANALYSIS</h1>
+            <div class="loader-bar"><div class="loader-progress"></div></div>
+            <p id="loading-text">Initializing stellar navigation...</p>
+        </div>
+    </div>
+
+    <div id="app" style="display:none;">
+        <nav class="navbar">
+            <div class="logo">
+                <span class="logo-icon">☄️</span>
+                <span class="logo-text">METEOR<span class="accent">SHOWER</span>AI</span>
+            </div>
+            <div class="nav-links">
+                <button class="nav-btn active" data-view="3d">
+                    <span class="icon">🌌</span> 3D Cosmos
+                </button>
+                <button class="nav-btn" data-view="dashboard">
+                    <span class="icon">📊</span> Dashboard
+                </button>
+                <button class="nav-btn" data-view="predict">
+                    <span class="icon">🔮</span> Predict
+                </button>
+                <button class="nav-btn" data-view="data">
+                    <span class="icon">📁</span> Data Explorer
+                </button>
+            </div>
+            <div class="status-indicator">
+                <span class="status-dot"></span>
+                <span id="status-text">Online</span>
+            </div>
+        </nav>
+
+        <div id="view-3d" class="view active">
+            <div id="scene-container"></div>
+            
+            <div class="hud-top-left">
+                <div class="hud-panel">
+                    <h3>🌀 CONTROLS</h3>
+                    <p><kbd>Left Click</kbd> Rotate</p>
+                    <p><kbd>Right Click</kbd> Pan</p>
+                    <p><kbd>Scroll</kbd> Zoom</p>
+                </div>
+            </div>
+            
+            <div class="hud-top-right">
+                <div class="hud-panel stats-mini">
+                    <div class="stat-row">
+                        <span class="stat-label">Active Meteors</span>
+                        <span class="stat-value" id="active-count">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Avg Velocity</span>
+                        <span class="stat-value" id="avg-vel">0 km/s</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Frame Rate</span>
+                        <span class="stat-value" id="fps">0 FPS</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="hud-bottom-center">
+                <div class="control-bar">
+                    <button class="ctrl-btn" id="toggle-stars" title="Toggle Starfield">⭐</button>
+                    <button class="ctrl-btn" id="toggle-trails" title="Toggle Trails">💫</button>
+                    <button class="ctrl-btn" id="toggle-earth" title="Toggle Earth">🌍</button>
+                    <button class="ctrl-btn play-btn" id="toggle-animation" title="Play/Pause">⏸️</button>
+                    <button class="ctrl-btn" id="reset-camera" title="Reset View">🎯</button>
+                    <button class="ctrl-btn" id="density-btn" title="Meteor Density">
+                        <span id="density-val">500</span> 🌠
+                    </button>
+                    <div class="speed-control">
+                        <label>⏱️ Speed:</label>
+                        <input type="range" id="speed-slider" min="0.1" max="5" step="0.1" value="1">
+                        <span id="speed-val">1.0x</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="hud-bottom-left">
+                <div id="meteor-tooltip" class="tooltip hidden">
+                    <h4 id="tip-id">Meteor ID</h4>
+                    <p>Shower: <span id="tip-shower">-</span></p>
+                    <p>Peak Mag: <span id="tip-peak">-</span></p>
+                    <p>Duration: <span id="tip-dur">-</span></p>
+                    <p>Velocity: <span id="tip-vel">-</span></p>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-dashboard" class="view">
+            <div class="dashboard-grid">
+                <div class="card metric-card gradient-1">
+                    <div class="card-icon">☄️</div>
+                    <div class="card-content">
+                        <span class="metric-label">Total Meteors</span>
+                        <span class="metric-value" id="metric-total">0</span>
+                    </div>
+                </div>
+                <div class="card metric-card gradient-2">
+                    <div class="card-icon">🌟</div>
+                    <div class="card-content">
+                        <span class="metric-label">Known Showers</span>
+                        <span class="metric-value" id="metric-known">0</span>
+                    </div>
+                </div>
+                <div class="card metric-card gradient-3">
+                    <div class="card-icon">🌀</div>
+                    <div class="card-content">
+                        <span class="metric-label">Sporadic Meteors</span>
+                        <span class="metric-value" id="metric-sporadic">0</span>
+                    </div>
+                </div>
+                <div class="card metric-card gradient-4">
+                    <div class="card-icon">🔬</div>
+                    <div class="card-content">
+                        <span class="metric-label">Unique Shower Types</span>
+                        <span class="metric-value" id="metric-unique">0</span>
+                    </div>
+                </div>
+                <div class="card metric-card gradient-5">
+                    <div class="card-icon">💫</div>
+                    <div class="card-content">
+                        <span class="metric-label">Avg Peak Magnitude</span>
+                        <span class="metric-value" id="metric-peak">0</span>
+                    </div>
+                </div>
+                <div class="card metric-card gradient-6">
+                    <div class="card-icon">⚡</div>
+                    <div class="card-content">
+                        <span class="metric-label">Avg Velocity (km/s)</span>
+                        <span class="metric-value" id="metric-velocity">0</span>
+                    </div>
+                </div>
+
+                <div class="card chart-card wide">
+                    <h3>🏆 Top Meteor Showers</h3>
+                    <div id="shower-chart" class="bar-chart"></div>
+                </div>
+
+                <div class="card chart-card">
+                    <h3>📈 Activity Timeline</h3>
+                    <canvas id="timeline-canvas"></canvas>
+                </div>
+
+                <div class="card chart-card">
+                    <h3>🎯 Shower Distribution</h3>
+                    <canvas id="pie-canvas"></canvas>
+                </div>
+
+                <div class="card data-card wide">
+                    <h3>📋 Known Meteor Showers</h3>
+                    <div class="table-wrapper">
+                        <table class="data-table" id="showers-table">
+                            <thead>
+                                <tr>
+                                    <th>Shower Name</th>
+                                    <th>Count</th>
+                                    <th>Avg Peak</th>
+                                    <th>Avg Duration (s)</th>
+                                    <th>Avg Velocity (km/s)</th>
+                                    <th>Avg Mass (kg)</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-predict" class="view">
+            <div class="predict-container">
+                <div class="card predict-form-card">
+                    <h2>🔮 Meteor Shower Prediction Engine</h2>
+                    <p class="subtitle">Enter orbital and atmospheric parameters to predict meteor characteristics</p>
+                    
+                    <div class="form-sections">
+                        <div class="form-section">
+                            <h4>🌍 Positional Parameters</h4>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label>Solar Longitude (°)</label>
+                                    <input type="number" id="f-sol-lon" value="280" step="0.1">
+                                </div>
+                                <div class="form-group">
+                                    <label>RA Geocentric (°)</label>
+                                    <input type="number" id="f-rageo" value="150" step="0.1">
+                                </div>
+                                <div class="form-group">
+                                    <label>DEC Geocentric (°)</label>
+                                    <input type="number" id="f-decgeo" value="30" step="0.1">
+                                </div>
+                                <div class="form-group">
+                                    <label>Latitude Begin (°)</label>
+                                    <input type="number" id="f-latbeg" value="45" step="0.1">
+                                </div>
+                                <div class="form-group">
+                                    <label>Longitude Begin (°)</label>
+                                    <input type="number" id="f-lonbeg" value="10" step="0.1">
+                                </div>
+                                <div class="form-group">
+                                    <label>Height Begin (km)</label>
+                                    <input type="number" id="f-htbeg" value="100" step="0.1">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h4>🚀 Velocity & Orbital Elements</h4>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label>V Geocentric (km/s)</label>
+                                    <input type="number" id="f-vgeo" value="40" step="0.1">
+                                </div>
+                                <div class="form-group">
+                                    <label>λ Heliocentric (°)</label>
+                                    <input type="number" id="f-lamhel" value="100" step="0.1">
+                                </div>
+                                <div class="form-group">
+                                    <label>β Heliocentric (°)</label>
+                                    <input type="number" id="f-bethel" value="30" step="0.1">
+                                </div>
+                                <div class="form-group">
+                                    <label>V Heliocentric (km/s)</label>
+                                    <input type="number" id="f-vhel" value="35" step="0.1">
+                                </div>
+                                <div class="form-group">
+                                    <label>Semi-major axis (AU)</label>
+                                    <input type="number" id="f-a" value="2.5" step="0.1">
+                                </div>
+                                <div class="form-group">
+                                    <label>Eccentricity</label>
+                                    <input type="number" id="f-e" value="0.8" step="0.01" min="0" max="1">
+                                </div>
+                                <div class="form-group">
+                                    <label>Inclination (°)</label>
+                                    <input type="number" id="f-i" value="45" step="0.1">
+                                </div>
+                                <div class="form-group">
+                                    <label>Perihelion Arg (°)</label>
+                                    <input type="number" id="f-peri" value="150" step="0.1">
+                                </div>
+                                <div class="form-group">
+                                    <label>Node Longitude (°)</label>
+                                    <input type="number" id="f-node" value="100" step="0.1">
+                                </div>
+                                <div class="form-group">
+                                    <label>Π (°)</label>
+                                    <input type="number" id="f-pi" value="200" step="0.1">
+                                </div>
+                                <div class="form-group">
+                                    <label>Perihelion Dist q (AU)</label>
+                                    <input type="number" id="f-q" value="0.5" step="0.1">
+                                </div>
+                                <div class="form-group">
+                                    <label>Aphelion Dist Q (AU)</label>
+                                    <input type="number" id="f-Q" value="4.0" step="0.1">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h4>💥 Physical Properties</h4>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label>Tisserand (J)</label>
+                                    <input type="number" id="f-tiss" value="2.5" step="0.1">
+                                </div>
+                                <div class="form-group">
+                                    <label>Duration (s)</label>
+                                    <input type="number" id="f-dur" value="0.5" step="0.1">
+                                </div>
+                                <div class="form-group">
+                                    <label>Peak Magnitude</label>
+                                    <input type="number" id="f-peak" value="3" step="0.1">
+                                </div>
+                                <div class="form-group">
+                                    <label>Avg Velocity (km/s)</label>
+                                    <input type="number" id="f-vavg" value="45" step="0.1">
+                                </div>
+                                <div class="form-group">
+                                    <label>Mass (kg)</label>
+                                    <input type="number" id="f-mass" value="0.0001" step="0.00001">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button class="btn btn-secondary" id="btn-random">🎲 Random Parameters</button>
+                        <button class="btn btn-secondary" id="btn-reset">↻ Reset Defaults</button>
+                        <button class="btn btn-primary" id="btn-predict">
+                            <span class="btn-spinner hidden"></span>
+                            🔍 Run Prediction
+                        </button>
+                    </div>
+                </div>
+
+                <div class="predict-results" id="predict-results">
+                    <div class="card result-card">
+                        <h3>📊 Prediction Results</h3>
+                        <div class="result-placeholder">
+                            <div class="placeholder-icon">🔮</div>
+                            <p>Enter parameters and click "Run Prediction"</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-data" class="view">
+            <div class="data-container">
+                <div class="card toolbar-card">
+                    <div class="toolbar">
+                        <div class="search-box">
+                            <input type="text" id="search-input" placeholder="🔍 Search by ID or Shower name...">
+                        </div>
+                        <div class="filter-box">
+                            <select id="shower-filter">
+                                <option value="">All Showers</option>
+                            </select>
+                        </div>
+                        <div class="pager-info">
+                            <span id="page-info">Showing 0-0 of 0</span>
+                        </div>
+                        <div class="pager-controls">
+                            <button class="btn btn-small" id="btn-prev">← Prev</button>
+                            <span id="page-number">Page 1</span>
+                            <button class="btn btn-small" id="btn-next">Next →</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card table-card">
+                    <div class="table-wrapper">
+                        <table class="data-table" id="meteors-table">
+                            <thead>
+                                <tr>
+                                    <th>Trajectory ID</th>
+                                    <th>IAU Shower</th>
+                                    <th>Category</th>
+                                    <th>Sol Lon</th>
+                                    <th>RA/DEC</th>
+                                    <th>Vgeo (km/s)</th>
+                                    <th>Peak</th>
+                                    <th>Duration</th>
+                                    <th>Location</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td colspan="10" class="loading-cell">Loading meteor data...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal" class="modal hidden">
+        <div class="modal-backdrop" data-close></div>
+        <div class="modal-content">
+            <button class="modal-close" data-close>✕</button>
+            <h3 id="modal-title">Meteor Details</h3>
+            <div id="modal-body"></div>
+        </div>
+    </div>
+
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>
