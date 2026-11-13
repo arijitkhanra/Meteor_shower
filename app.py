@@ -1,16 +1,23 @@
+# pyrefly: ignore[missing-import]
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import pandas as pd
+# pyrefly: ignore[missing-import]
 import numpy as np
 import os
 import json
+import datetime
 from meteor_model import (
     load_and_preprocess_data,
     load_models,
     predict_shower,
     predict_peak,
     predict_duration,
-    get_shower_statistics
+    get_shower_statistics,
+    predict_by_date,
+    get_calendar_month_predictions,
+    get_model_evaluation_metrics,
+    ASTRONOMICAL_SHOWERS
 )
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -44,14 +51,138 @@ def index():
 def health():
     return jsonify({
         'status': 'healthy',
+        'application': 'METEOR VISION – AI-Based Meteor Shower Prediction System',
         'total_meteors': len(df) if df is not None else 0,
-        'models_loaded': models is not None
+        'models_loaded': models is not None,
+        'timestamp': datetime.datetime.now(datetime.timezone.utc).isoformat()
     })
 
 @app.route('/api/statistics')
 def statistics():
     stats = get_shower_statistics(df)
     return jsonify(stats)
+
+@app.route('/api/model-info')
+def model_info():
+    metrics = get_model_evaluation_metrics()
+    return jsonify(metrics)
+
+@app.route('/api/upcoming-showers')
+def upcoming_showers():
+    return jsonify({'showers': ASTRONOMICAL_SHOWERS})
+
+@app.route('/api/predict/date', methods=['GET', 'POST'])
+def predict_date_endpoint():
+    try:
+        if request.method == 'POST':
+            data = request.get_json(force=True) or {}
+            date_str = data.get('date')
+            year = data.get('year')
+            month = data.get('month')
+            day = data.get('day')
+        else:
+            date_str = request.args.get('date')
+            year = request.args.get('year')
+            month = request.args.get('month')
+            day = request.args.get('day')
+            
+        if date_str:
+            parts = date_str.strip().split('-')
+            if len(parts) == 3:
+                year, month, day = int(parts[0]), int(parts[1]), int(parts[2])
+            else:
+                return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD'}), 400
+        elif year and month and day:
+            year, month, day = int(year), int(month), int(day)
+        else:
+            today = datetime.date.today()
+            year, month, day = today.year, today.month, today.day
+            
+        result = predict_by_date(models, year, month, day)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+@app.route('/api/predict/calendar')
+def predict_calendar_endpoint():
+    try:
+        now = datetime.date.today()
+        year = int(request.args.get('year', now.year))
+        month = int(request.args.get('month', now.month))
+        
+        if month < 1 or month > 12:
+            return jsonify({'error': 'Invalid month (1-12)'}), 400
+            
+        result = get_calendar_month_predictions(models, year, month)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+@app.route('/api/3d-data')
+def get_3d_data():
+    limit = int(request.args.get('limit', 300))
+    shower_filter = request.args.get('shower', '')
+    
+    filtered_df = df.copy()
+    if shower_filter and shower_filter != 'ALL':
+        filtered_df = filtered_df[filtered_df['IAU_Shower'] == shower_filter]
+        
+    sample = filtered_df.sample(n=min(limit, len(filtered_df)), random_state=42) if len(filtered_df) > 0 else filtered_df
+    
+    meteors_3d = []
+    for _, row in sample.iterrows():
+        rageo = float(row['RAgeo']) if pd.notna(row['RAgeo']) else 0.0
+        decgeo = float(row['DECgeo']) if pd.notna(row['DECgeo']) else 0.0
+        vgeo = float(row['Vgeo']) if pd.notna(row['Vgeo']) else 35.0
+        peak = float(row['Peak']) if pd.notna(row['Peak']) else 1.0
+        duration = float(row['Duration']) if pd.notna(row['Duration']) else 0.5
+        mass = float(row['Mass_kg']) if pd.notna(row['Mass_kg']) else 0.0001
+        
+        lat_beg = float(row['LatBeg']) if pd.notna(row['LatBeg']) else None
+        lon_beg = float(row['LonBeg']) if pd.notna(row['LonBeg']) else None
+        ht_beg = float(row['HtBeg']) if pd.notna(row['HtBeg']) else 100.0
+        lat_end = float(row['LatEnd']) if pd.notna(row['LatEnd']) else None
+        lon_end = float(row['LonEnd']) if pd.notna(row['LonEnd']) else None
+        ht_end = float(row['HtEnd']) if pd.notna(row['HtEnd']) else 75.0
+        
+        shower_name = row['IAU_Shower']
+        iau_code = row['IAU_Code']
+        activity = row.get('shower_activity', 'Sporadic')
+        
+        # Color coding based on shower and velocity
+        if shower_name == 'QUA':
+            color = {'r': 0.0, 'g': 0.94, 'b': 1.0}  # Electric Cyan
+        elif vgeo > 60:
+            color = {'r': 0.3, 'g': 0.8, 'b': 1.0}   # Fast Blue-White
+        elif vgeo > 45:
+            color = {'r': 0.2, 'g': 1.0, 'b': 0.6}   # Emerald Green
+        elif peak < -1.0:
+            color = {'r': 1.0, 'g': 0.75, 'b': 0.15} # Bright Golden Fireball
+        else:
+            color = {'r': 1.0, 'g': 0.45, 'b': 0.2}  # Fiery Orange
+            
+        meteors_3d.append({
+            'id': row['Unique trajectory'],
+            'shower': shower_name,
+            'iau_code': iau_code,
+            'activity': activity,
+            'rageo': rageo,
+            'decgeo': decgeo,
+            'vgeo': vgeo,
+            'peak': peak,
+            'duration': duration,
+            'mass': mass,
+            'lat_beg': lat_beg,
+            'lon_beg': lon_beg,
+            'ht_beg': ht_beg,
+            'lat_end': lat_end,
+            'lon_end': lon_end,
+            'ht_end': ht_end,
+            'color': color,
+            'size': max(0.04, min(0.18, mass * 120 + 0.05))
+        })
+    
+    return jsonify({'meteors': meteors_3d, 'total_matched': len(filtered_df)})
 
 @app.route('/api/meteors')
 def get_meteors():
@@ -68,7 +199,7 @@ def get_meteors():
             filtered['IAU_Shower'].str.contains(search, case=False)
         ]
     
-    if shower_filter:
+    if shower_filter and shower_filter != 'ALL':
         filtered = filtered[filtered['IAU_Shower'] == shower_filter]
     
     total = len(filtered)
@@ -100,7 +231,8 @@ def get_meteors():
             'a': float(row['a']) if pd.notna(row['a']) else None,
             'e': float(row['e']) if pd.notna(row['e']) else None,
             'i': float(row['i']) if pd.notna(row['i']) else None,
-            'category': row['Shower_Category']
+            'category': row['Shower_Category'],
+            'activity': row.get('shower_activity', 'Sporadic')
         })
     
     return jsonify({
@@ -163,51 +295,6 @@ def get_showers():
     
     return jsonify(result)
 
-@app.route('/api/3d-data')
-def get_3d_data():
-    limit = int(request.args.get('limit', 500))
-    
-    sample = df.sample(n=min(limit, len(df)), random_state=42)
-    
-    meteors_3d = []
-    for _, row in sample.iterrows():
-        rageo = float(row['RAgeo']) if pd.notna(row['RAgeo']) else 0
-        decgeo = float(row['DECgeo']) if pd.notna(row['DECgeo']) else 0
-        vgeo = float(row['Vgeo']) if pd.notna(row['Vgeo']) else 30
-        peak = float(row['Peak']) if pd.notna(row['Peak']) else 3
-        duration = float(row['Duration']) if pd.notna(row['Duration']) else 0.5
-        mass = float(row['Mass_kg']) if pd.notna(row['Mass_kg']) else 0.0001
-        
-        ra_rad = np.radians(rageo)
-        dec_rad = np.radians(decgeo)
-        radius = 2 + np.random.random() * 2
-        
-        x = radius * np.cos(dec_rad) * np.cos(ra_rad)
-        y = radius * np.cos(dec_rad) * np.sin(ra_rad)
-        z = radius * np.sin(dec_rad)
-        
-        speed_factor = vgeo / 30
-        color_intensity = min(max((-peak + 5) / 8, 0), 1)
-        
-        meteors_3d.append({
-            'id': row['Unique trajectory'],
-            'shower': row['IAU_Shower'],
-            'position': {'x': float(x), 'y': float(y), 'z': float(z)},
-            'velocity': {'x': float(x * -0.1 * speed_factor), 'y': float(y * -0.1 * speed_factor), 'z': float(z * -0.1 * speed_factor)},
-            'peak': peak,
-            'duration': duration,
-            'mass': mass,
-            'vgeo': vgeo,
-            'color': {
-                'r': 1.0,
-                'g': 0.4 + color_intensity * 0.4,
-                'b': 0.2 + color_intensity * 0.3
-            },
-            'size': max(0.02, min(0.15, mass * 100))
-        })
-    
-    return jsonify({'meteors': meteors_3d})
-
 @app.route('/api/predict/shower', methods=['POST'])
 def predict_shower_endpoint():
     try:
@@ -245,51 +332,62 @@ def predict_duration_endpoint():
 def predict_comprehensive():
     try:
         input_data = request.json
-        
         shower_result = predict_shower(models, input_data)
         peak = predict_peak(models, input_data)
         duration = predict_duration(models, input_data)
         
-        intensity = 'Bright' if peak < 2 else 'Average' if peak < 4 else 'Faint'
-        duration_class = 'Long' if duration > 1.0 else 'Medium' if duration > 0.3 else 'Short'
+        vgeo = float(input_data.get('Vgeo', 35))
+        mass = float(input_data.get('Mass_kg', 0.0001))
+        energy_joules = 0.5 * mass * (vgeo * 1000)**2
+        energy_tnt_kg = energy_joules / 4.184e6
         
-        energy_estimate = (duration * 1000) * (10 ** (-peak / 2.5)) * 4.2e8
+        if peak < -4:
+            peak_class = 'Superbolide'
+        elif peak < 0:
+            peak_class = 'Bright'
+        elif peak < 3:
+            peak_class = 'Normal'
+        else:
+            peak_class = 'Faint'
+            
+        dur_class = 'Long' if duration > 1.0 else ('Medium' if duration > 0.4 else 'Short')
+        risk_level = 'High' if energy_joules > 1e6 else ('Moderate' if energy_joules > 1e4 else 'Minimal')
         
         return jsonify({
             'shower_prediction': shower_result,
             'peak_magnitude': {
                 'value': peak,
-                'intensity_class': intensity
+                'intensity_class': peak_class
             },
             'duration': {
                 'seconds': duration,
-                'class': duration_class,
-                'formatted': f"{duration:.2f}s"
+                'formatted': f"{duration:.2f}s",
+                'class': dur_class
             },
-            'estimated_energy_joules': float(energy_estimate),
-            'estimated_energy_tnt_kg': float(energy_estimate / 4.184e6),
+            'estimated_energy_joules': energy_joules,
+            'estimated_energy_tnt_kg': energy_tnt_kg,
             'risk_assessment': {
-                'level': 'Low' if energy_estimate < 1e9 else 'Medium' if energy_estimate < 1e12 else 'High',
+                'level': risk_level,
                 'note': 'Based on estimated kinetic energy'
             }
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 400
 
-@app.route('/api/shower_timeline')
-def get_shower_timeline():
-    sol_lon_range = list(range(0, 360, 5))
+@app.route('/api/timeline')
+def get_timeline():
+    sol_lon_range = np.arange(280.0, 283.0, 0.2)
+    timeline = []
     known_df = df[df['IAU_Code'] != '-1']
     
-    timeline = []
     for sol in sol_lon_range:
         in_range = known_df[
-            (known_df['Sol_lon'] >= sol) & (known_df['Sol_lon'] < sol + 5)
+            (known_df['Sol_lon'] >= sol) & (known_df['Sol_lon'] < sol + 0.2)
         ]
         if len(in_range) > 0:
             top_shower = in_range['IAU_Shower'].value_counts().idxmax()
             timeline.append({
-                'sol_lon': sol,
+                'sol_lon': round(float(sol), 2),
                 'count': len(in_range),
                 'top_shower': top_shower,
                 'avg_peak': float(in_range['Peak'].median()),
@@ -297,7 +395,7 @@ def get_shower_timeline():
             })
         else:
             timeline.append({
-                'sol_lon': sol,
+                'sol_lon': round(float(sol), 2),
                 'count': 0,
                 'top_shower': 'None',
                 'avg_peak': None,
@@ -330,6 +428,5 @@ def get_orbital_elements():
     return jsonify({'orbits': orbits})
 
 if __name__ == '__main__':
-    initialize()
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)

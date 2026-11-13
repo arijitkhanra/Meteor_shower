@@ -1,0 +1,108 @@
+{
+  "model_name": "Random Forest Classifier",
+  "target_variable": "shower_activity",
+  "total_records": 4733,
+  "train_samples": 3786,
+  "test_samples": 947,
+  "accuracy": 0.9197,
+  "weighted_precision": 0.9144,
+  "weighted_recall": 0.9197,
+  "weighted_f1": 0.9152,
+  "classes": [
+    "High",
+    "Low",
+    "Medium",
+    "Sporadic"
+  ],
+  "per_class": {
+    "High": {
+      "precision": 0.9789,
+      "recall": 0.9894,
+      "f1": 0.9841,
+      "support": 94
+    },
+    "Low": {
+      "precision": 0.9177,
+      "recall": 0.9507,
+      "f1": 0.9339,
+      "support": 223
+    },
+    "Medium": {
+      "precision": 0.7582,
+      "recall": 0.575,
+      "f1": 0.654,
+      "support": 120
+    },
+    "Sporadic": {
+      "precision": 0.9377,
+      "recall": 0.9745,
+      "f1": 0.9558,
+      "support": 510
+    }
+  },
+  "confusion_matrix": [
+    [
+      93,
+      0,
+      0,
+      1
+    ],
+    [
+      1,
+      212,
+      10,
+      0
+    ],
+    [
+      0,
+      19,
+      69,
+      32
+    ],
+    [
+      1,
+      0,
+      12,
+      497
+    ]
+  ],
+  "feature_importances": [
+    {
+      "feature": "RAgeo",
+      "importance": 0.2702232677797163
+    },
+    {
+      "feature": "DECgeo",
+      "importance": 0.239590789953603
+    },
+    {
+      "feature": "Peak",
+      "importance": 0.20157804675047414
+    },
+    {
+      "feature": "Vgeo",
+      "importance": 0.11167524629316675
+    },
+    {
+      "feature": "HtBeg",
+      "importance": 0.05134928107944338
+    },
+    {
+      "feature": "Mass_kg",
+      "importance": 0.044611905760247324
+    },
+    {
+      "feature": "HtEnd",
+      "importance": 0.030540704160792995
+    },
+    {
+      "feature": "Sol_lon",
+      "importance": 0.02706497282668101
+    },
+    {
+      "feature": "Duration",
+      "importance": 0.02336578539587518
+    }
+  ],
+  "training_status": "Trained & Validated"
+}
