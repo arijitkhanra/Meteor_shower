@@ -13,7 +13,12 @@ from meteor_model import (
     get_shower_statistics
 )
 
-app = Flask(__name__, static_folder='../frontend', static_url_path='')
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+static_dir = BASE_DIR
+if os.path.exists(os.path.join(BASE_DIR, '..', 'frontend')):
+    static_dir = os.path.join(BASE_DIR, '..', 'frontend')
+
+app = Flask(__name__, static_folder=static_dir, static_url_path='')
 CORS(app)
 
 df = None
@@ -21,14 +26,19 @@ models = None
 
 def initialize():
     global df, models
+    if df is not None and models is not None:
+        return
     print("Loading dataset and models...")
     df = load_and_preprocess_data()
     models = load_models()
     print(f"Loaded {len(df)} meteor records and all models.")
 
+# Initialize dataset and models on startup for both Gunicorn and direct execution
+initialize()
+
 @app.route('/')
 def index():
-    return send_from_directory('../frontend', 'index.html')
+    return send_from_directory(static_dir, 'index.html')
 
 @app.route('/api/health')
 def health():

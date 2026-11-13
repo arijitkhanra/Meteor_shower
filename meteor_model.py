@@ -7,8 +7,11 @@ from sklearn.metrics import accuracy_score, mean_squared_error, r2_score
 import joblib
 import os
 
-DATASET_PATH = os.path.join(os.path.dirname(__file__), '..', 'meteor_2025_with_headers_no_null(2).csv')
-MODEL_DIR = os.path.join(os.path.dirname(__file__), 'models')
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATASET_PATH = os.path.join(BASE_DIR, 'meteor_2025_with_headers_no_null(2).csv')
+if not os.path.exists(DATASET_PATH):
+    DATASET_PATH = os.path.join(BASE_DIR, '..', 'meteor_2025_with_headers_no_null(2).csv')
+MODEL_DIR = os.path.join(BASE_DIR, 'models')
 
 def ensure_model_dir():
     if not os.path.exists(MODEL_DIR):
@@ -199,27 +202,31 @@ def load_models():
         'duration_regressor.pkl', 'duration_scaler.pkl', 'duration_features.pkl'
     ]
     
-    all_exist = all(os.path.exists(os.path.join(MODEL_DIR, m)) for m in required_models)
-    
-    if not all_exist:
+    model_dir = BASE_DIR
+    if all(os.path.exists(os.path.join(BASE_DIR, m)) for m in required_models):
+        model_dir = BASE_DIR
+    elif os.path.exists(MODEL_DIR) and all(os.path.exists(os.path.join(MODEL_DIR, m)) for m in required_models):
+        model_dir = MODEL_DIR
+    else:
         print("Training models...")
         df = load_and_preprocess_data()
         train_shower_classifier(df)
         train_peak_intensity_predictor(df)
         train_duration_predictor(df)
+        model_dir = MODEL_DIR if os.path.exists(os.path.join(MODEL_DIR, 'shower_classifier.pkl')) else BASE_DIR
         print("Models trained successfully!")
     
     models = {
-        'shower_clf': joblib.load(os.path.join(MODEL_DIR, 'shower_classifier.pkl')),
-        'shower_scaler': joblib.load(os.path.join(MODEL_DIR, 'shower_scaler.pkl')),
-        'shower_le': joblib.load(os.path.join(MODEL_DIR, 'shower_label_encoder.pkl')),
-        'shower_features': joblib.load(os.path.join(MODEL_DIR, 'shower_features.pkl')),
-        'peak_reg': joblib.load(os.path.join(MODEL_DIR, 'peak_regressor.pkl')),
-        'peak_scaler': joblib.load(os.path.join(MODEL_DIR, 'peak_scaler.pkl')),
-        'peak_features': joblib.load(os.path.join(MODEL_DIR, 'peak_features.pkl')),
-        'dur_reg': joblib.load(os.path.join(MODEL_DIR, 'duration_regressor.pkl')),
-        'dur_scaler': joblib.load(os.path.join(MODEL_DIR, 'duration_scaler.pkl')),
-        'dur_features': joblib.load(os.path.join(MODEL_DIR, 'duration_features.pkl')),
+        'shower_clf': joblib.load(os.path.join(model_dir, 'shower_classifier.pkl')),
+        'shower_scaler': joblib.load(os.path.join(model_dir, 'shower_scaler.pkl')),
+        'shower_le': joblib.load(os.path.join(model_dir, 'shower_label_encoder.pkl')),
+        'shower_features': joblib.load(os.path.join(model_dir, 'shower_features.pkl')),
+        'peak_reg': joblib.load(os.path.join(model_dir, 'peak_regressor.pkl')),
+        'peak_scaler': joblib.load(os.path.join(model_dir, 'peak_scaler.pkl')),
+        'peak_features': joblib.load(os.path.join(model_dir, 'peak_features.pkl')),
+        'dur_reg': joblib.load(os.path.join(model_dir, 'duration_regressor.pkl')),
+        'dur_scaler': joblib.load(os.path.join(model_dir, 'duration_scaler.pkl')),
+        'dur_features': joblib.load(os.path.join(model_dir, 'duration_features.pkl')),
     }
     
     return models
