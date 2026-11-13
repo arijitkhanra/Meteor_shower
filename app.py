@@ -51,7 +51,7 @@ def index():
 def health():
     return jsonify({
         'status': 'healthy',
-        'application': 'METEOR VISION – AI-Based Meteor Shower Prediction System',
+        'application': 'METEOR SHOWER – AI-Powered Meteor Shower Prediction System',
         'total_meteors': len(df) if df is not None else 0,
         'models_loaded': models is not None,
         'timestamp': datetime.datetime.now(datetime.timezone.utc).isoformat()

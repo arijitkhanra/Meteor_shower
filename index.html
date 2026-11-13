@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>METEOR VISION – AI-Powered Meteor Shower Observatory</title>
+    <title>METEOR SHOWER – AI-Powered Meteor Shower Prediction System</title>
     
-    <!-- Professional Typography -->
+    <!-- Professional Scientific Typography: Inter, Space Grotesk, IBM Plex Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@500;700;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
     
     <link rel="stylesheet" href="css/style.css">
     
@@ -27,10 +27,10 @@
     <div id="loading-screen">
         <div class="loader-content">
             <div class="meteor-icon">☄️</div>
-            <h1>METEOR VISION</h1>
-            <p class="loader-subtitle">AI-POWERED METEOR SHOWER OBSERVATORY</p>
+            <h1>METEOR SHOWER</h1>
+            <p class="loader-subtitle">AI-POWERED METEOR SHOWER PREDICTION SYSTEM</p>
             <div class="loader-bar"><div class="loader-progress"></div></div>
-            <p id="loading-text">Calibrating 3D Planetary Sphere & AI Models...</p>
+            <p id="loading-text">Initializing 3D Planetary Observatory & AI Pipeline...</p>
         </div>
     </div>
 
@@ -40,8 +40,8 @@
             <div class="logo">
                 <span class="logo-icon">☄️</span>
                 <div class="logo-titles">
-                    <span class="logo-text">METEOR <span class="accent">VISION</span></span>
-                    <span class="logo-tag">AI-POWERED METEOR SHOWER OBSERVATORY</span>
+                    <span class="logo-text">METEOR <span class="accent">SHOWER</span></span>
+                    <span class="logo-tag">AI-POWERED METEOR SHOWER PREDICTION SYSTEM</span>
                 </div>
             </div>
 
@@ -73,8 +73,8 @@
         </header>
 
         <!-- ===================================================================
-             VIEW 1: 3D EARTH OBSERVATORY (MAIN SCREEN)
-             Layout: Left Panel | Center 3D Earth (55-65%) | Right Panel
+             VIEW 1: 3D EARTH OBSERVATORY (MAIN VIEW)
+             Layout: Left Observatory Panel | Center 3D Earth | Right Prediction Panel
              =================================================================== -->
         <div id="view-3d" class="view active">
             <div class="observatory-layout">
@@ -83,35 +83,33 @@
                 <aside class="panel-left">
                     <div class="hud-panel glass-panel">
                         <div class="panel-title-bar">
-                            <span class="section-tag">STREAM TELEMETRY</span>
-                            <span class="live-pill"><span class="live-dot"></span> OBSERVING</span>
+                            <span class="section-tag">OBSERVATORY CONTROL</span>
                         </div>
 
-                        <!-- Active Stream Card -->
+                        <!-- Current Meteor Shower Name & Activity -->
                         <div class="stream-summary-card">
-                            <span class="stream-label">CURRENT TARGET STREAM</span>
-                            <h3 class="stream-name" id="obs-stream-name">Quadrantids</h3>
+                            <span class="stream-label">CURRENT METEOR SHOWER</span>
+                            <h3 class="stream-name" id="obs-stream-name">Quadrantids (QUA)</h3>
                             <div class="stream-meta-row">
-                                <span class="tier-pill pill-high" id="obs-stream-tier">HIGH ACTIVITY</span>
-                                <span class="zhr-pill" id="obs-stream-zhr">~110 ZHR</span>
-                                <span class="iau-code" id="obs-stream-code">QUA</span>
+                                <span class="tier-pill pill-high" id="obs-stream-tier">High Activity</span>
+                                <span class="zhr-pill numeric" id="obs-stream-zhr">~110 ZHR</span>
                             </div>
                         </div>
 
-                        <!-- Target Shower Selection -->
+                        <!-- Target Shower Selection Dropdown -->
                         <div class="form-group-compact">
-                            <label for="stream-quick-select">Select Shower Stream Target:</label>
+                            <label for="stream-quick-select">Select Meteor Shower:</label>
                             <select id="stream-quick-select" class="hud-select-styled">
-                                <option value="ALL">All Active Streams (Global)</option>
-                                <option value="QUA" selected>Quadrantids (QUA) • Jan Peak</option>
-                                <option value="LYR">Lyrids (LYR) • Apr Peak</option>
-                                <option value="ETA">eta Aquariids (ETA) • May Peak</option>
-                                <option value="SDA">Southern delta Aquariids (SDA) • Jul</option>
-                                <option value="PER">Perseids (PER) • Aug Peak</option>
-                                <option value="ORI">Orionids (ORI) • Oct Peak</option>
-                                <option value="LEO">Leonids (LEO) • Nov Peak</option>
-                                <option value="GEM">Geminids (GEM) • Dec Peak</option>
-                                <option value="URS">Ursids (URS) • Dec Peak</option>
+                                <option value="ALL">All Active Showers (Global)</option>
+                                <option value="QUA" selected>Quadrantids (QUA) • Peak Jan 3-4</option>
+                                <option value="LYR">Lyrids (LYR) • Peak Apr 22</option>
+                                <option value="ETA">eta Aquariids (ETA) • Peak May 6</option>
+                                <option value="SDA">Southern delta Aquariids (SDA) • Peak Jul 30</option>
+                                <option value="PER">Perseids (PER) • Peak Aug 12-13</option>
+                                <option value="ORI">Orionids (ORI) • Peak Oct 21-22</option>
+                                <option value="LEO">Leonids (LEO) • Peak Nov 17-18</option>
+                                <option value="GEM">Geminids (GEM) • Peak Dec 13-14</option>
+                                <option value="URS">Ursids (URS) • Peak Dec 22-23</option>
                                 <option value="COM">Comae Berenicids (COM)</option>
                                 <option value="AHY">alpha Hydrids (AHY)</option>
                                 <option value="NCC">Northern chi Orionids (NCC)</option>
@@ -119,7 +117,7 @@
                             </select>
                         </div>
 
-                        <!-- Physical Stream Parameters -->
+                        <!-- Astronomical Shower Specifications -->
                         <div class="spec-grid">
                             <div class="spec-cell">
                                 <span class="s-label">PARENT BODY</span>
@@ -138,85 +136,65 @@
                                 <span class="s-val numeric" id="obs-radiant-dec">+49.5°</span>
                             </div>
                             <div class="spec-cell">
-                                <span class="s-label">SOLAR LON (λ⊙)</span>
+                                <span class="s-label">SOLAR LONGITUDE</span>
                                 <span class="s-val numeric" id="obs-sol-lon">283.4°</span>
                             </div>
                             <div class="spec-cell">
-                                <span class="s-label">EST. PEAK MAG</span>
-                                <span class="s-val numeric" id="obs-peak-mag">-0.32</span>
+                                <span class="s-label">PEAK MAGNITUDE</span>
+                                <span class="s-val numeric" id="obs-peak-mag">-0.32 mag</span>
                             </div>
                         </div>
 
-                        <!-- Visualization Camera Views -->
+                        <!-- Earth Visualization Modes -->
                         <div class="camera-mode-section">
-                            <span class="sub-label">CAMERA PERSPECTIVE</span>
+                            <span class="sub-label">VISUALIZATION MODE</span>
                             <div class="camera-btn-row">
                                 <button class="cam-btn active" id="cam-earth" title="Earth Center View">
-                                    🌍 Center
+                                    Earth Center View
                                 </button>
                                 <button class="cam-btn" id="cam-radiant" title="Radiant Perspective">
-                                    🎯 Radiant
+                                    Radiant View
                                 </button>
                                 <button class="cam-btn" id="cam-pole" title="Polar Orbit View">
-                                    ❄️ Polar
+                                    Polar Orbit View
                                 </button>
-                            </div>
-                        </div>
-
-                        <!-- Live Telemetry Badges -->
-                        <div class="telemetry-badges">
-                            <div class="t-badge">
-                                <span class="t-lbl">ACTIVE METEORS</span>
-                                <span class="t-num numeric" id="active-count">0</span>
-                            </div>
-                            <div class="t-badge">
-                                <span class="t-lbl">SIMULATION FPS</span>
-                                <span class="t-num numeric" id="fps">60 FPS</span>
                             </div>
                         </div>
                     </div>
                 </aside>
 
-                <!-- 2. CENTER STAGE: 3D EARTH VIEWPORT (55-65% WIDTH) -->
+                <!-- 2. CENTER STAGE: 3D EARTH VIEWPORT -->
                 <main class="center-stage">
                     <div id="scene-container"></div>
 
-                    <!-- Atmospheric Coordinate Overlay Indicator -->
-                    <div class="globe-overlay-indicator">
-                        <span class="coord-tag" id="globe-coords">LAT: 0.0° • LON: 0.0° • TILT: 23.44°</span>
-                    </div>
-
-                    <!-- FLOATING BOTTOM VISUALIZATION CONTROLS -->
+                    <!-- FLOATING BOTTOM CONTROL BAR -->
                     <div class="stage-bottom-controls">
                         <div class="controls-glass-bar">
                             <button class="stage-ctrl-btn play-btn" id="toggle-animation" title="Play / Pause Simulation">
-                                ⏸️
-                            </button>
-                            <div class="btn-divider"></div>
-                            <button class="stage-ctrl-btn active" id="toggle-earth" title="Toggle 3D Earth Visibility">
-                                🌍 Earth
-                            </button>
-                            <button class="stage-ctrl-btn active" id="toggle-clouds" title="Toggle Swirling Clouds">
-                                ☁️ Clouds
-                            </button>
-                            <button class="stage-ctrl-btn active" id="toggle-atmos" title="Toggle Rayleigh Atmosphere">
-                                ✨ Glow
-                            </button>
-                            <button class="stage-ctrl-btn active" id="toggle-grid" title="Toggle Coordinate Grid">
-                                🌐 Grid
-                            </button>
-                            <button class="stage-ctrl-btn active" id="toggle-meteors" title="Toggle Meteor Streaks">
-                                💫 Meteors
+                                ⏸️ Pause
                             </button>
                             <div class="btn-divider"></div>
                             <button class="stage-ctrl-btn" id="btn-zoom-in" title="Zoom In (+)">
-                                🔍+
+                                🔍+ Zoom In
                             </button>
                             <button class="stage-ctrl-btn" id="btn-zoom-out" title="Zoom Out (-)">
-                                🔍-
+                                🔍- Zoom Out
                             </button>
-                            <button class="stage-ctrl-btn" id="reset-rotation" title="Reset Earth View & Rotation">
-                                🎯 Reset
+                            <button class="stage-ctrl-btn" id="btn-fit-screen" title="Fit Earth to Screen">
+                                ⛶ Fit Screen
+                            </button>
+                            <button class="stage-ctrl-btn" id="reset-camera" title="Reset Camera">
+                                🎯 Reset Camera
+                            </button>
+                            <div class="btn-divider"></div>
+                            <button class="stage-ctrl-btn active" id="toggle-clouds" title="Toggle Clouds">
+                                ☁️ Clouds
+                            </button>
+                            <button class="stage-ctrl-btn active" id="toggle-atmos" title="Toggle Atmospheric Glow">
+                                ✨ Atmosphere
+                            </button>
+                            <button class="stage-ctrl-btn active" id="toggle-meteors" title="Toggle Meteor Animation">
+                                ☄️ Meteors
                             </button>
                             <div class="btn-divider"></div>
                             <!-- Speed Control -->
@@ -229,9 +207,9 @@
                     </div>
                 </main>
 
-                <!-- 3. RIGHT PREDICTION CALENDAR & AI PREDICTION PANEL -->
+                <!-- 3. RIGHT PREDICTION PANEL -->
                 <aside class="panel-right">
-                    <!-- Calendar Section -->
+                    <!-- Interactive Prediction Calendar -->
                     <div class="hud-panel glass-panel calendar-hud-card">
                         <div class="panel-title-bar">
                             <span class="section-tag">PREDICTION CALENDAR</span>
@@ -240,11 +218,11 @@
 
                         <div class="cal-header-bar">
                             <button class="cal-arrow-btn" id="cal-prev" title="Previous Month">◀</button>
-                            <span class="cal-month-title" id="cal-month-display">January 2025</span>
+                            <span class="cal-month-title" id="cal-month-display">Current Month</span>
                             <button class="cal-arrow-btn" id="cal-next" title="Next Month">▶</button>
                         </div>
 
-                        <!-- Activity Level Legend -->
+                        <!-- Activity Legend -->
                         <div class="calendar-activity-legend">
                             <span class="leg-item"><span class="leg-dot dot-high"></span> High</span>
                             <span class="leg-item"><span class="leg-dot dot-med"></span> Medium</span>
@@ -254,88 +232,83 @@
 
                         <!-- Days of Week Header -->
                         <div class="cal-weekdays-row">
-                            <span>SU</span><span>MO</span><span>TU</span><span>WE</span><span>TH</span><span>FR</span><span>SA</span>
+                            <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
                         </div>
 
-                        <!-- 7-Column Days Grid -->
+                        <!-- 7-Column Grid -->
                         <div class="cal-days-grid" id="calendar-grid">
                             <!-- Populated dynamically via JS -->
                         </div>
                     </div>
 
-                    <!-- AI Prediction Inference Card -->
+                    <!-- AI Prediction Results Panel -->
                     <div class="hud-panel glass-panel prediction-hud-card">
                         <div class="panel-title-bar">
-                            <span class="section-tag">AI PREDICTION INFERENCE</span>
+                            <span class="section-tag">AI PREDICTION RESULT</span>
                             <span class="ai-model-tag">RANDOM FOREST</span>
                         </div>
 
                         <!-- Selected Date Header -->
                         <div class="pred-date-box">
-                            <div class="pred-date-heading" id="pred-selected-date">January 03, 2025</div>
-                            <div class="pred-sol-coord numeric" id="pred-sol-lon">SOLAR LONGITUDE: 283.36° • DAY 3</div>
+                            <div class="pred-date-heading" id="pred-selected-date">Selected Date</div>
+                            <div class="pred-sol-coord numeric" id="pred-sol-lon">SOLAR LONGITUDE: --</div>
                         </div>
 
-                        <!-- Predicted Activity Badge -->
+                        <!-- Predicted Activity & Model Confidence -->
                         <div class="pred-result-banner">
                             <div class="activity-result-left">
                                 <span class="activity-lbl">PREDICTED ACTIVITY</span>
-                                <span class="activity-badge badge-high" id="pred-activity-badge">HIGH ACTIVITY</span>
+                                <span class="activity-badge badge-high" id="pred-activity-badge">High Activity</span>
                             </div>
                             <div class="activity-result-right">
                                 <span class="confidence-lbl">CONFIDENCE</span>
-                                <span class="confidence-val numeric" id="pred-confidence-val">94.0%</span>
+                                <span class="confidence-val numeric" id="pred-confidence-val">--%</span>
                             </div>
                         </div>
 
-                        <!-- Probability Fill Bar -->
+                        <!-- Progress Bar -->
                         <div class="confidence-track">
-                            <div class="confidence-progress" id="pred-conf-fill" style="width: 94%;"></div>
+                            <div class="confidence-progress" id="pred-conf-fill" style="width: 0%;"></div>
                         </div>
 
-                        <!-- Key ML Outputs Grid -->
+                        <!-- Details Grid -->
                         <div class="pred-outputs-grid">
                             <div class="out-box">
                                 <span class="out-lbl">SHOWER CLASSIFICATION</span>
-                                <span class="out-val highlight" id="pred-shower-name">Quadrantids (QUA)</span>
+                                <span class="out-val highlight" id="pred-shower-name">--</span>
                             </div>
                             <div class="out-box">
-                                <span class="out-lbl">PARENT ASTEROID/COMET</span>
-                                <span class="out-val" id="pred-parent-body">Asteroid 2003 EH1</span>
+                                <span class="out-lbl">PARENT CELESTIAL BODY</span>
+                                <span class="out-val" id="pred-parent-body">--</span>
                             </div>
                             <div class="out-box">
                                 <span class="out-lbl">RADIANT (RA / DEC)</span>
-                                <span class="out-val numeric" id="pred-radiant">230.1° / +49.5°</span>
+                                <span class="out-val numeric" id="pred-radiant">--</span>
                             </div>
                             <div class="out-box">
-                                <span class="out-lbl">GEOCENTRIC VELOCITY</span>
-                                <span class="out-val numeric" id="pred-velocity">41.2 km/s</span>
+                                <span class="out-lbl">ENTRY VELOCITY</span>
+                                <span class="out-val numeric" id="pred-velocity">--</span>
                             </div>
                             <div class="out-box">
-                                <span class="out-lbl">EXPECTED PEAK MAG</span>
-                                <span class="out-val numeric" id="pred-peak-mag">-0.32 mag</span>
+                                <span class="out-lbl">PEAK MAGNITUDE</span>
+                                <span class="out-val numeric" id="pred-peak-mag">--</span>
                             </div>
                             <div class="out-box">
                                 <span class="out-lbl">EXPECTED DURATION</span>
-                                <span class="out-val numeric" id="pred-duration">0.54s</span>
+                                <span class="out-val numeric" id="pred-duration">--</span>
                             </div>
                         </div>
 
-                        <!-- Provenance / Dataset Note -->
+                        <!-- Provenance Notice -->
                         <div class="provenance-note">
                             <span class="prov-icon">ℹ️</span>
-                            <span id="pred-provenance-text">NASA CAMS 2025 High-Density In-Sample Observation Data</span>
+                            <span id="pred-provenance-text">Random Forest Prediction Pipeline</span>
                         </div>
-
-                        <!-- Interactive Action -->
-                        <button class="btn btn-action-stream" id="btn-focus-stream">
-                            🚀 Align 3D Earth to Radiant Stream
-                        </button>
                     </div>
                 </aside>
             </div>
 
-            <!-- Hover Meteor Tooltip -->
+            <!-- Meteor Observation Hover Tooltip -->
             <div id="meteor-tooltip" class="tooltip hidden">
                 <div class="tip-header">
                     <span class="tip-tag">METEOR OBSERVATION</span>

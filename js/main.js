@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 // ==========================================================================
+// METEOR SHOWER – AI-POWERED METEOR SHOWER PREDICTION SYSTEM
 // OBSERVATORY APPLICATION STATE
 // ==========================================================================
 const now = new Date();
@@ -13,11 +14,10 @@ const state = {
     activeMeteors: [],
     animationRunning: true,
     speedMultiplier: 1.0,
-    densityLimit: 300,
+    densityLimit: 260,
     showEarth: true,
     showClouds: true,
     showAtmos: true,
-    showGrid: true,
     showMeteors: true,
     activeStreamFilter: 'QUA',
     // Dynamic real-time date (never hardcoded)
@@ -32,7 +32,7 @@ const state = {
 };
 
 // ==========================================================================
-// THREE.JS SCENE GLOBALS
+// THREE.JS SCENE GLOBALS & CAMERA TRANSITIONS
 // ==========================================================================
 let scene, camera, renderer, controls;
 let earthGroup, earthMesh, cloudsMesh, atmosMesh, gridMesh;
@@ -42,21 +42,58 @@ let clock = new THREE.Clock();
 let fpsFrames = 0, fpsTime = 0;
 const earthRadius = 2.25;
 
-// Major Annual Meteor Showers Reference Catalog
-const MAJOR_SHOWERS_CATALOG = [
-    { code: 'QUA', name: 'Quadrantids', parent: 'Asteroid 2003 EH1', dates: 'Jan 01 - Jan 05', peak: 'Jan 03-04', zhr: 110, ra: 230.1, dec: 49.5, vel: 41.2, tier: 'High', color: '#00f0ff' },
-    { code: 'LYR', name: 'Lyrids', parent: 'Comet Thatcher', dates: 'Apr 16 - Apr 25', peak: 'Apr 22', zhr: 18, ra: 271.4, dec: 33.6, vel: 46.8, tier: 'Medium', color: '#2dd4bf' },
-    { code: 'ETA', name: 'eta Aquariids', parent: 'Comet 1P/Halley', dates: 'Apr 19 - May 28', peak: 'May 06', zhr: 50, ra: 338.0, dec: -1.0, vel: 66.0, tier: 'Medium', color: '#34d399' },
-    { code: 'SDA', name: 'Southern delta Aquariids', parent: 'Comet Machholz', dates: 'Jul 12 - Aug 23', peak: 'Jul 30', zhr: 25, ra: 339.6, dec: -16.4, vel: 41.0, tier: 'Medium', color: '#fb923c' },
-    { code: 'PER', name: 'Perseids', parent: 'Comet Swift-Tuttle', dates: 'Jul 17 - Aug 24', peak: 'Aug 12-13', zhr: 100, ra: 48.2, dec: 58.1, vel: 59.0, tier: 'High', color: '#f43f5e' },
-    { code: 'ORI', name: 'Orionids', parent: 'Comet 1P/Halley', dates: 'Oct 02 - Nov 07', peak: 'Oct 21-22', zhr: 20, ra: 95.0, dec: 16.0, vel: 66.0, tier: 'Medium', color: '#e879f9' },
-    { code: 'LEO', name: 'Leonids', parent: 'Comet Tempel-Tuttle', dates: 'Nov 06 - Nov 30', peak: 'Nov 17-18', zhr: 15, ra: 152.0, dec: 22.0, vel: 71.0, tier: 'Medium', color: '#facc15' },
-    { code: 'GEM', name: 'Geminids', parent: 'Asteroid 3200 Phaethon', dates: 'Dec 04 - Dec 20', peak: 'Dec 13-14', zhr: 150, ra: 112.3, dec: 33.0, vel: 35.0, tier: 'High', color: '#fbbf24' },
-    { code: 'URS', name: 'Ursids', parent: 'Comet 8P/Tuttle', dates: 'Dec 17 - Dec 26', peak: 'Dec 22-23', zhr: 10, ra: 217.0, dec: 76.0, vel: 33.0, tier: 'Low', color: '#38bdf8' }
-];
+// Camera Smooth Transition Engine
+let cameraTransition = {
+    active: false,
+    startTime: 0,
+    duration: 800,
+    startPos: new THREE.Vector3(),
+    endPos: new THREE.Vector3(),
+    startTarget: new THREE.Vector3(),
+    endTarget: new THREE.Vector3()
+};
 
 // ==========================================================================
-// INITIALIZATION
+// IAU & ASTRONOMICAL METEOR SHOWER ALMANAC CATALOG
+// ==========================================================================
+const MAJOR_SHOWERS_CATALOG = [
+    { code: 'QUA', name: 'Quadrantids', parent: 'Asteroid 2003 EH1', dates: 'Jan 01 - Jan 05', peak: 'Jan 03-04', zhr: 110, ra: 230.1, dec: 49.5, vel: 41.2, sol_lon: 283.4, peak_mag: -0.32, tier: 'High', color: '#00f0ff' },
+    { code: 'LYR', name: 'Lyrids', parent: 'Comet Thatcher (C/1861 G1)', dates: 'Apr 16 - Apr 25', peak: 'Apr 22', zhr: 18, ra: 271.4, dec: 33.6, vel: 46.8, sol_lon: 32.3, peak_mag: 0.15, tier: 'Medium', color: '#2dd4bf' },
+    { code: 'ETA', name: 'eta Aquariids', parent: 'Comet 1P/Halley', dates: 'Apr 19 - May 28', peak: 'May 06', zhr: 50, ra: 338.0, dec: -1.0, vel: 66.0, sol_lon: 45.5, peak_mag: 0.05, tier: 'Medium', color: '#34d399' },
+    { code: 'SDA', name: 'Southern delta Aquariids', parent: 'Comet 96P/Machholz', dates: 'Jul 12 - Aug 23', peak: 'Jul 30', zhr: 25, ra: 339.6, dec: -16.4, vel: 41.0, sol_lon: 126.0, peak_mag: 0.22, tier: 'Medium', color: '#fb923c' },
+    { code: 'PER', name: 'Perseids', parent: 'Comet 109P/Swift-Tuttle', dates: 'Jul 17 - Aug 24', peak: 'Aug 12-13', zhr: 100, ra: 48.2, dec: 58.1, vel: 59.0, sol_lon: 140.0, peak_mag: -1.25, tier: 'High', color: '#f43f5e' },
+    { code: 'ORI', name: 'Orionids', parent: 'Comet 1P/Halley', dates: 'Oct 02 - Nov 07', peak: 'Oct 21-22', zhr: 20, ra: 95.0, dec: 16.0, vel: 66.0, sol_lon: 208.5, peak_mag: -0.10, tier: 'Medium', color: '#e879f9' },
+    { code: 'LEO', name: 'Leonids', parent: 'Comet 55P/Tempel-Tuttle', dates: 'Nov 06 - Nov 30', peak: 'Nov 17-18', zhr: 15, ra: 152.0, dec: 22.0, vel: 71.0, sol_lon: 235.3, peak_mag: -0.45, tier: 'Medium', color: '#facc15' },
+    { code: 'GEM', name: 'Geminids', parent: 'Asteroid 3200 Phaethon', dates: 'Dec 04 - Dec 20', peak: 'Dec 13-14', zhr: 150, ra: 112.3, dec: 33.0, vel: 35.0, sol_lon: 262.2, peak_mag: -1.40, tier: 'High', color: '#fbbf24' },
+    { code: 'URS', name: 'Ursids', parent: 'Comet 8P/Tuttle', dates: 'Dec 17 - Dec 26', peak: 'Dec 22-23', zhr: 10, ra: 217.0, dec: 76.0, vel: 33.0, sol_lon: 270.8, peak_mag: 0.42, tier: 'Low', color: '#38bdf8' },
+    { code: 'COM', name: 'Comae Berenicids', parent: 'Unknown Periodic Comet', dates: 'Dec 12 - Jan 23', peak: 'Dec 16 & Jan 02', zhr: 5, ra: 173.3, dec: 24.7, vel: 62.3, sol_lon: 281.4, peak_mag: 0.35, tier: 'Medium', color: '#38bdf8' },
+    { code: 'AHY', name: 'alpha Hydrids', parent: 'Unknown Cometary Fragment', dates: 'Jan 01 - Jan 08', peak: 'Jan 05', zhr: 4, ra: 126.8, dec: 2.7, vel: 44.1, sol_lon: 285.0, peak_mag: 0.60, tier: 'Low', color: '#a855f7' },
+    { code: 'NCC', name: 'Northern chi Orionids', parent: 'Asteroid 1999 YD', dates: 'Nov 25 - Dec 31', peak: 'Dec 10', zhr: 3, ra: 83.2, dec: 24.2, vel: 29.8, sol_lon: 258.0, peak_mag: 0.80, tier: 'Low', color: '#60a5fa' },
+    { code: 'SCC', name: 'Southern chi Orionids', parent: 'Unknown Asteroid', dates: 'Nov 25 - Dec 31', peak: 'Dec 11', zhr: 3, ra: 81.8, dec: 15.6, vel: 27.5, sol_lon: 259.0, peak_mag: 0.95, tier: 'Low', color: '#fb923c' }
+];
+
+function getCatalogShower(code) {
+    if (!code) return MAJOR_SHOWERS_CATALOG[0];
+    const upper = code.toUpperCase();
+    return MAJOR_SHOWERS_CATALOG.find(s => s.code === upper || s.name.toUpperCase().includes(upper)) || {
+        code: code,
+        name: code,
+        parent: 'Interplanetary Debris Stream',
+        dates: 'Annual Activity Window',
+        peak: 'Peak Period',
+        zhr: 15,
+        ra: 230.1,
+        dec: 49.5,
+        vel: 41.2,
+        sol_lon: 283.4,
+        peak_mag: 0.1,
+        tier: 'Medium',
+        color: '#00f0ff'
+    };
+}
+
+// ==========================================================================
+// INITIALIZATION LIFECYCLE
 // ==========================================================================
 document.addEventListener('DOMContentLoaded', async () => {
     initNavigation();
@@ -104,7 +141,7 @@ function switchView(viewName) {
     if (activeView) activeView.classList.add('active');
 
     if (viewName === '3d') {
-        setTimeout(onWindowResize, 50);
+        setTimeout(onWindowResize, 60);
     } else if (viewName === 'dashboard') {
         renderDashboard();
     } else if (viewName === 'model') {
@@ -139,31 +176,34 @@ function initThreeScene() {
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.2;
+    renderer.toneMappingExposure = 1.25;
     container.appendChild(renderer.domElement);
 
+    // Orbit Controls with Smooth Damping and Safe Zoom Limits
     controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
-    controls.minDistance = 3.0;
-    controls.maxDistance = 16.0;
+    controls.minDistance = 2.75;  // Earth radius is 2.25: surface close-up without interior clipping
+    controls.maxDistance = 15.0;  // Deep space perspective
+    controls.zoomSpeed = 1.0;
+    controls.rotateSpeed = 0.8;
     controls.target.set(0, 0, 0);
 
     // Natural Planetary Lighting
-    const ambientLight = new THREE.AmbientLight(0x182442, 1.4);
+    const ambientLight = new THREE.AmbientLight(0x1a2646, 1.5);
     scene.add(ambientLight);
 
-    // Sun Directional Light (illuminates day side with terminator)
-    const sunLight = new THREE.DirectionalLight(0xfff6ea, 2.8);
+    // Sun Directional Light (Illuminates day hemisphere with smooth terminator)
+    const sunLight = new THREE.DirectionalLight(0xfff6ea, 2.9);
     sunLight.position.set(16, 7, 12);
     scene.add(sunLight);
 
-    // Atmospheric Back-Glow
-    const rimLight = new THREE.DirectionalLight(0x00f0ff, 0.6);
+    // Soft Atmospheric Fill Light (Backlit spaceglow)
+    const rimLight = new THREE.DirectionalLight(0x00f0ff, 0.65);
     rimLight.position.set(-14, -5, -8);
     scene.add(rimLight);
 
-    // Object Groups
+    // Scene Groups
     earthGroup = new THREE.Group();
     meteorGroup = new THREE.Group();
     trailGroup = new THREE.Group();
@@ -174,11 +214,11 @@ function initThreeScene() {
     scene.add(trailGroup);
     scene.add(impactGroup);
 
-    // Create World Elements
+    // Build Astronomical Components
     createStarfield();
     createRealisticEarthSphere();
 
-    // Raycasting for interactive hover
+    // Raycasting for interactive telemetry tooltips
     raycaster = new THREE.Raycaster();
     mouse = new THREE.Vector2();
 
@@ -187,30 +227,29 @@ function initThreeScene() {
 }
 
 // ==========================================================================
-// REALISTIC 3D EARTH SPHERE BUILDER
+// REALISTIC 3D EARTH SPHERE (SPHERICAL, DETAILED CONTINENTS & OCEANS)
 // ==========================================================================
 function createRealisticEarthSphere() {
-    // 1. High-Detail Earth Surface Texture
+    // 1. Procedural High-Definition Surface Map (Instant offline render)
     const proceduralCanvas = generateProceduralEarthCanvas();
     const proceduralTexture = new THREE.CanvasTexture(proceduralCanvas);
     proceduralTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
 
-    // Mathematical 1:1:1 Sphere (64x64 segments)
+    // True mathematical sphere (radius = 2.25, 64x64 segments)
     const earthGeo = new THREE.SphereGeometry(earthRadius, 64, 64);
     const earthMat = new THREE.MeshPhongMaterial({
         map: proceduralTexture,
-        shininess: 32,
+        shininess: 34,
         specular: new THREE.Color(0x225599)
     });
 
     earthMesh = new THREE.Mesh(earthGeo, earthMat);
     earthGroup.add(earthMesh);
 
-    // Asynchronously upgrade to high-res satellite photo textures if online
+    // Asynchronously upgrade to high-resolution satellite imagery
     const texLoader = new THREE.TextureLoader();
     texLoader.crossOrigin = 'anonymous';
 
-    // Day Map
     texLoader.load(
         'https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_atmos_2048.jpg',
         (tex) => {
@@ -220,7 +259,6 @@ function createRealisticEarthSphere() {
         },
         undefined,
         () => {
-            // Fallback CDN if GitHub raw is blocked
             texLoader.load('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg', (tex) => {
                 earthMat.map = tex;
                 earthMat.needsUpdate = true;
@@ -228,7 +266,7 @@ function createRealisticEarthSphere() {
         }
     );
 
-    // Specular Map (ocean water reflects, land stays matte)
+    // Specular Reflectivity (Oceans reflect sunlight, land is matte)
     texLoader.load(
         'https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_specular_2048.jpg',
         (tex) => {
@@ -238,7 +276,7 @@ function createRealisticEarthSphere() {
         }
     );
 
-    // 2. Latitude & Longitude Coordinate Grid
+    // 2. Latitude & Longitude Coordinate Grid Layer
     const gridCanvas = generateCoordinateGridCanvas();
     const gridTexture = new THREE.CanvasTexture(gridCanvas);
     const gridGeo = new THREE.SphereGeometry(earthRadius * 1.002, 64, 64);
@@ -251,21 +289,20 @@ function createRealisticEarthSphere() {
     gridMesh = new THREE.Mesh(gridGeo, gridMat);
     earthGroup.add(gridMesh);
 
-    // 3. Swirling Dynamic Clouds Layer
+    // 3. Dynamic Swirling Clouds Layer
     const cloudsCanvas = generateCloudsCanvas();
     const cloudsTexture = new THREE.CanvasTexture(cloudsCanvas);
     const cloudsGeo = new THREE.SphereGeometry(earthRadius * 1.018, 64, 64);
     const cloudsMat = new THREE.MeshPhongMaterial({
         map: cloudsTexture,
         transparent: true,
-        opacity: 0.42,
+        opacity: 0.45,
         blending: THREE.NormalBlending,
         depthWrite: false
     });
     cloudsMesh = new THREE.Mesh(cloudsGeo, cloudsMat);
     earthGroup.add(cloudsMesh);
 
-    // Upgrade clouds texture to photo map if available
     texLoader.load(
         'https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_clouds_1024.png',
         (tex) => {
@@ -274,7 +311,7 @@ function createRealisticEarthSphere() {
         }
     );
 
-    // 4. Rayleigh Atmospheric Scattering Rim Glow Halo
+    // 4. Rayleigh Atmospheric Scattering Glow Halo
     const atmosGeo = new THREE.SphereGeometry(earthRadius * 1.045, 64, 64);
     const atmosMat = new THREE.ShaderMaterial({
         vertexShader: `
@@ -288,7 +325,7 @@ function createRealisticEarthSphere() {
             varying vec3 vNormal;
             void main() {
                 float intensity = pow(0.65 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.2);
-                gl_FragColor = vec4(0.0, 0.75, 1.0, 1.0) * intensity * 0.95;
+                gl_FragColor = vec4(0.0, 0.78, 1.0, 1.0) * intensity * 0.95;
             }
         `,
         blending: THREE.AdditiveBlending,
@@ -299,7 +336,7 @@ function createRealisticEarthSphere() {
     atmosMesh = new THREE.Mesh(atmosGeo, atmosMat);
     earthGroup.add(atmosMesh);
 
-    // Real-world astronomical axial tilt (23.44°)
+    // Astronomical axial tilt (23.44°)
     earthGroup.rotation.z = THREE.MathUtils.degToRad(23.44);
 }
 
@@ -342,7 +379,6 @@ function generateProceduralEarthCanvas() {
         }
     }
 
-    // Continents
     // North America
     drawGeoPoly([
         [-168, 66], [-160, 71], [-140, 70], [-125, 70], [-95, 70], [-80, 62],
@@ -373,13 +409,13 @@ function generateProceduralEarthCanvas() {
         [44, 13], [35, 32], [28, 41], [15, 40], [0, 42], [-9, 36]
     ], '#326637');
 
-    // Sahara & Arabian Sands
+    // Sahara & Arabian Desert
     drawGeoPoly([
         [-15, 28], [0, 32], [15, 32], [32, 30], [55, 24], [58, 20],
         [50, 14], [43, 12], [32, 16], [15, 18], [-15, 18], [-15, 28]
     ], '#b88a44', '#8a652a');
 
-    // Africa
+    // Sub-Saharan Africa
     drawGeoPoly([
         [-17, 15], [-5, 5], [9, 4], [10, -5], [12, -16], [18, -34],
         [28, -34], [33, -26], [40, -10], [51, 11], [43, 12], [32, 30],
@@ -417,11 +453,9 @@ function generateCoordinateGridCanvas() {
         const y = ((90 - lat) / 180) * height;
         ctx.beginPath();
         if (lat === 0) {
-            // Equator (Prominent Cyan)
             ctx.strokeStyle = 'rgba(0, 240, 255, 0.75)';
             ctx.lineWidth = 2.0;
         } else if (Math.abs(lat) === 23.5) {
-            // Tropics (Gold)
             ctx.strokeStyle = 'rgba(251, 191, 36, 0.55)';
             ctx.lineWidth = 1.5;
         } else {
@@ -462,7 +496,7 @@ function generateCoordinateGridCanvas() {
     return canvas;
 }
 
-// Procedural Clouds Canvas
+// Procedural Cloud Density Canvas
 function generateCloudsCanvas() {
     const width = 2048;
     const height = 1024;
@@ -499,13 +533,13 @@ function generateCloudsCanvas() {
 }
 
 function createStarfield() {
-    const starCount = 2800;
+    const starCount = 3000;
     const geometry = new THREE.BufferGeometry();
     const positions = new Float32Array(starCount * 3);
     const colors = new Float32Array(starCount * 3);
 
     for (let i = 0; i < starCount * 3; i += 3) {
-        const radius = 50 + Math.random() * 80;
+        const radius = 55 + Math.random() * 95;
         const theta = Math.random() * Math.PI * 2;
         const phi = Math.acos((Math.random() * 2) - 1);
 
@@ -527,7 +561,7 @@ function createStarfield() {
     geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
     const material = new THREE.PointsMaterial({
-        size: 0.16,
+        size: 0.17,
         vertexColors: true,
         transparent: true,
         opacity: 0.85
@@ -537,7 +571,7 @@ function createStarfield() {
     scene.add(starField);
 }
 
-// Radiant Coordinates (RA, DEC) to Direction Vector in Space
+// Convert Radiant Coordinates (RA, DEC) to 3D Celestial Direction Vector
 function radiantToDirectionVector(ra, dec) {
     const raRad = THREE.MathUtils.degToRad(ra);
     const decRad = THREE.MathUtils.degToRad(dec);
@@ -561,49 +595,32 @@ function geoToVector3(lat, lon, altitude = earthRadius) {
 }
 
 // ==========================================================================
-// REALISTIC METEOR STREAKS & PARTICLE DYNAMICS
+// REALISTIC METEOR SIMULATION – MULTI-DIRECTIONAL RADIANT & PERSPECTIVE
 // ==========================================================================
 class RealisticMeteor {
-    constructor(data) {
+    constructor(data, isSporadic = false) {
         this.data = data;
+        this.isSporadic = isSporadic;
         this.active = false;
         this.progress = 0;
-        this.speed = (0.7 + (data.vgeo || 40) / 80.0) * 0.016;
+        this.trailLength = 24;
 
-        const dir = radiantToDirectionVector(data.rageo || 230, data.decgeo || 49);
-        this.radiantDir = dir.clone();
-
-        const spawnDistance = 6.5 + Math.random() * 3.5;
-        const offset = new THREE.Vector3(
-            (Math.random() - 0.5) * 3.0,
-            (Math.random() - 0.5) * 3.0,
-            (Math.random() - 0.5) * 3.0
+        // Visual Head Particle
+        const size = Math.max(0.04, Math.min(0.09, (data.size || 0.05) * 1.15));
+        const headGeo = new THREE.SphereGeometry(size, 8, 8);
+        const col = new THREE.Color(
+            data.color?.r ?? (isSporadic ? 1.0 : 0.0),
+            data.color?.g ?? (isSporadic ? 0.8 : 0.94),
+            data.color?.b ?? (isSporadic ? 0.3 : 1.0)
         );
-        this.startPos = dir.clone().multiplyScalar(spawnDistance).add(offset);
-        this.endPos = offset.clone().normalize().multiplyScalar(earthRadius * 1.04);
-
-        // Meteor Head Particle
-        const headGeo = new THREE.SphereGeometry(Math.max(0.035, Math.min(0.09, (data.size || 0.06) * 1.1)), 10, 10);
-        const col = new THREE.Color(data.color?.r ?? 0.0, data.color?.g ?? 0.94, data.color?.b ?? 1.0);
+        this.color = col;
         const headMat = new THREE.MeshBasicMaterial({ color: col });
         this.headMesh = new THREE.Mesh(headGeo, headMat);
         this.headMesh.userData = data;
 
-        // Glowing streak trail
-        this.trailLength = 22;
+        // Trail Line Geometry
         this.trailPositions = new Float32Array(this.trailLength * 3);
         this.trailColors = new Float32Array(this.trailLength * 3);
-
-        for (let i = 0; i < this.trailLength * 3; i += 3) {
-            this.trailPositions[i] = this.startPos.x;
-            this.trailPositions[i + 1] = this.startPos.y;
-            this.trailPositions[i + 2] = this.startPos.z;
-
-            const ratio = 1 - (i / (this.trailLength * 3));
-            this.trailColors[i] = col.r * ratio;
-            this.trailColors[i + 1] = col.g * ratio;
-            this.trailColors[i + 2] = col.b * ratio;
-        }
 
         const trailGeo = new THREE.BufferGeometry();
         trailGeo.setAttribute('position', new THREE.BufferAttribute(this.trailPositions, 3));
@@ -612,7 +629,7 @@ class RealisticMeteor {
         const trailMat = new THREE.LineBasicMaterial({
             vertexColors: true,
             transparent: true,
-            opacity: 0.85,
+            opacity: 0.9,
             blending: THREE.AdditiveBlending
         });
 
@@ -621,14 +638,80 @@ class RealisticMeteor {
         meteorGroup.add(this.headMesh);
         trailGroup.add(this.trailLine);
 
-        this.currentPos = this.startPos.clone();
+        this.currentPos = new THREE.Vector3();
         this.history = [];
+        this.reset();
     }
 
     reset() {
         this.progress = 0;
         this.active = true;
         this.history = [];
+
+        // Speed scaled to physical entry velocity (km/s)
+        const velKmS = this.data.vgeo || 41.2;
+        this.speed = (0.012 + (velKmS / 72.0) * 0.018);
+
+        // 1. Determine Incoming Stream Vector
+        let incomingDir;
+        if (this.isSporadic) {
+            // Sporadic background meteors arrive from various quadrants (upper-left, upper-right, oblique)
+            const randomTheta = Math.random() * Math.PI * 2;
+            const randomPhi = Math.acos((Math.random() * 2) - 1);
+            incomingDir = new THREE.Vector3(
+                Math.sin(randomPhi) * Math.cos(randomTheta),
+                Math.sin(randomPhi) * Math.sin(randomTheta),
+                Math.cos(randomPhi)
+            ).normalize();
+        } else {
+            // Shower stream meteors: arrive along negative radiant vector
+            const rVector = radiantToDirectionVector(this.data.rageo || 230.1, this.data.decgeo || 49.5);
+            incomingDir = rVector.clone().negate().normalize();
+        }
+
+        // 2. Build Orthonormal Coordinate Frame {p1, p2, incomingDir}
+        let ref = new THREE.Vector3(0, 1, 0);
+        if (Math.abs(incomingDir.dot(ref)) > 0.9) {
+            ref.set(0, 0, 1);
+        }
+        const p1 = new THREE.Vector3().crossVectors(incomingDir, ref).normalize();
+        const p2 = new THREE.Vector3().crossVectors(incomingDir, p1).normalize();
+
+        // 3. Cross-Sectional Spread (Perspective Divergence)
+        // Stratify angles so meteors visibly approach from upper-left, upper-right, top, bottom, and limbs
+        const spreadAngle = Math.random() * Math.PI * 2;
+        // Impact parameter radius: mix of direct atmospheric penetrators and tangential limb-grazers
+        const rPerp = 0.35 + Math.random() * 3.2;
+
+        const spawnDist = 7.5 + Math.random() * 4.0;
+        const radialOffset = new THREE.Vector3()
+            .addScaledVector(p1, Math.cos(spreadAngle) * rPerp)
+            .addScaledVector(p2, Math.sin(spreadAngle) * rPerp);
+
+        // Stream meteor paths include physical beam dispersion (±2° - 4°)
+        // When extended backwards, they all converge to the shower's radiant point
+        const beamDispersion = this.isSporadic ? 0.0 : 0.055;
+        const velocityDir = incomingDir.clone()
+            .addScaledVector(p1, (Math.random() - 0.5) * beamDispersion)
+            .addScaledVector(p2, (Math.random() - 0.5) * beamDispersion)
+            .normalize();
+
+        this.startPos = incomingDir.clone().multiplyScalar(-spawnDist).add(radialOffset);
+
+        // Path extends forward across Earth's sphere
+        const totalTravelDist = spawnDist + 3.0 + Math.random() * 3.0;
+        this.endPos = this.startPos.clone().addScaledVector(velocityDir, totalTravelDist);
+
+        this.currentPos.copy(this.startPos);
+
+        // Initialize trail colors with gradient
+        for (let i = 0; i < this.trailLength * 3; i += 3) {
+            const ratio = 1 - (i / (this.trailLength * 3));
+            this.trailColors[i] = this.color.r * ratio;
+            this.trailColors[i + 1] = this.color.g * ratio;
+            this.trailColors[i + 2] = this.color.b * ratio;
+        }
+        this.trailLine.geometry.attributes.color.needsUpdate = true;
     }
 
     update(effectiveSpeed) {
@@ -649,11 +732,13 @@ class RealisticMeteor {
         this.currentPos.lerpVectors(this.startPos, this.endPos, this.progress);
         this.headMesh.position.copy(this.currentPos);
 
-        // Atmosphere flare
-        const distToCenter = this.currentPos.length();
-        if (distToCenter < earthRadius * 1.15) {
-            const scale = 1.0 + Math.sin(this.progress * Math.PI) * 1.5;
-            this.headMesh.scale.set(scale, scale, scale);
+        // Atmospheric ablation flare effect: scale up particle brightness when near Earth atmosphere
+        const distFromCenter = this.currentPos.length();
+        if (distFromCenter < earthRadius * 1.18 && distFromCenter > earthRadius * 0.98) {
+            const flare = 1.0 + Math.sin(this.progress * Math.PI) * 1.7;
+            this.headMesh.scale.set(flare, flare, flare);
+        } else {
+            this.headMesh.scale.set(1.0, 1.0, 1.0);
         }
 
         this.history.unshift(this.currentPos.clone());
@@ -681,14 +766,16 @@ class RealisticMeteor {
     }
 }
 
+// Populate 3D Simulation with Dataset Trajectories & Sporadic Flux
 async function load3DData(filter = state.activeStreamFilter) {
     try {
         const url = `/api/3d-data?limit=${state.densityLimit}${filter && filter !== 'ALL' ? `&shower=${filter}` : ''}`;
         const res = await fetch(url);
-        if (!res.ok) throw new Error('Failed to load 3d meteor data');
+        if (!res.ok) throw new Error('Failed to load 3D meteor telemetry');
         const data = await res.json();
         state.meteors3DData = data.meteors || [];
 
+        // Clear existing instances
         state.activeMeteors.forEach(m => m.destroy());
         state.activeMeteors = [];
 
@@ -699,12 +786,34 @@ async function load3DData(filter = state.activeStreamFilter) {
             if (obj.material) obj.material.dispose();
         }
 
-        let totalVel = 0;
-        state.meteors3DData.forEach((m) => {
-            totalVel += (m.vgeo || 40);
-            const meteor = new RealisticMeteor(m);
-            state.activeMeteors.push(meteor);
+        const showerCatalogItem = getCatalogShower(filter);
 
+        // Synthesize pool: 75% shower stream meteors (radiant aligned) + 25% sporadic background meteors (varied directions)
+        const totalPool = Math.max(80, Math.min(220, state.meteors3DData.length || 120));
+        const sporadicCount = Math.floor(totalPool * 0.25);
+
+        for (let i = 0; i < totalPool; i++) {
+            const isSporadic = i < sporadicCount;
+            const meteorData = state.meteors3DData[i % Math.max(1, state.meteors3DData.length)] || {
+                id: `MTR-${1000 + i}`,
+                shower: showerCatalogItem.name,
+                iau_code: showerCatalogItem.code,
+                vgeo: showerCatalogItem.vel,
+                rageo: showerCatalogItem.ra,
+                decgeo: showerCatalogItem.dec,
+                peak: showerCatalogItem.peak_mag,
+                duration: 0.5,
+                mass: 0.0002
+            };
+
+            const meteor = new RealisticMeteor(meteorData, isSporadic);
+            // Stagger initial progress so meteors are already in motion at startup
+            meteor.progress = Math.random();
+            state.activeMeteors.push(meteor);
+        }
+
+        // Add Ground Triangulation Detection Rings on Earth
+        state.meteors3DData.slice(0, 40).forEach(m => {
             if (m.lat_beg != null && m.lon_beg != null) {
                 const impactPos = geoToVector3(m.lat_beg, m.lon_beg, earthRadius * 1.008);
                 const ringGeo = new THREE.RingGeometry(0.015, 0.045, 16);
@@ -722,9 +831,6 @@ async function load3DData(filter = state.activeStreamFilter) {
             }
         });
 
-        const activeCount = document.getElementById('active-count');
-        if (activeCount) activeCount.textContent = state.meteors3DData.length;
-
     } catch (e) {
         console.error('Error fetching 3D data:', e);
     }
@@ -735,7 +841,7 @@ function manageMeteorWaves(delta, effectiveSpeed) {
     if (!state.showMeteors) return;
 
     spawnTimer += delta * effectiveSpeed;
-    if (spawnTimer > 0.12) {
+    if (spawnTimer > 0.09) {
         spawnTimer = 0;
         const inactive = state.activeMeteors.filter(m => !m.active);
         const batchSize = Math.min(3, inactive.length);
@@ -748,7 +854,39 @@ function manageMeteorWaves(delta, effectiveSpeed) {
 }
 
 // ==========================================================================
-// ANIMATION LOOP (60 FPS FLUID PLANETARY RENDERING)
+// SMOOTH CAMERA TRANSITION ANIMATOR
+// ==========================================================================
+function animateCameraTo(targetPos, targetLookAt = new THREE.Vector3(0, 0, 0), duration = 800) {
+    if (!camera || !controls) return;
+    cameraTransition.active = true;
+    cameraTransition.startTime = performance.now();
+    cameraTransition.duration = duration;
+    cameraTransition.startPos.copy(camera.position);
+    cameraTransition.endPos.copy(targetPos);
+    cameraTransition.startTarget.copy(controls.target);
+    cameraTransition.endTarget.copy(targetLookAt);
+}
+
+function updateCameraTransition() {
+    if (!cameraTransition.active) return;
+    const now = performance.now();
+    const elapsed = now - cameraTransition.startTime;
+    const t = Math.min(1.0, elapsed / cameraTransition.duration);
+
+    // Cubic easeInOut curve
+    const ease = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+    camera.position.lerpVectors(cameraTransition.startPos, cameraTransition.endPos, ease);
+    controls.target.lerpVectors(cameraTransition.startTarget, cameraTransition.endTarget, ease);
+    controls.update();
+
+    if (t >= 1.0) {
+        cameraTransition.active = false;
+    }
+}
+
+// ==========================================================================
+// ANIMATION LOOP (60 FPS FLUID PLANETARY & METEOR SIMULATION)
 // ==========================================================================
 function animate() {
     requestAnimationFrame(animate);
@@ -757,10 +895,12 @@ function animate() {
     fpsFrames++;
     fpsTime += delta;
     if (fpsTime >= 1.0) {
-        const fpsElem = document.getElementById('fps');
-        if (fpsElem) fpsElem.textContent = `${Math.round(fpsFrames / fpsTime)} FPS`;
         fpsFrames = 0;
         fpsTime = 0;
+    }
+
+    if (cameraTransition.active) {
+        updateCameraTransition();
     }
 
     if (state.animationRunning) {
@@ -771,13 +911,13 @@ function animate() {
         if (gridMesh) gridMesh.rotation.y += 0.0016 * effectiveSpeed;
         if (impactGroup) impactGroup.rotation.y += 0.0016 * effectiveSpeed;
 
-        // Dynamic Cloud Layer Rotation (slight differential speed)
+        // Dynamic Cloud Layer Rotation (Differential speed for atmospheric depth)
         if (cloudsMesh) cloudsMesh.rotation.y += 0.0022 * effectiveSpeed;
 
-        // Starfield Drift
+        // Starfield Celestial Drift
         if (starField) starField.rotation.y += 0.00012 * effectiveSpeed;
 
-        // Meteor Shower Stream Simulation
+        // Multi-directional Meteor Stream Simulation
         manageMeteorWaves(delta, effectiveSpeed);
     }
 
@@ -829,15 +969,14 @@ async function renderCalendar(year = state.calendarYear, month = state.calendarM
             numSpan.textContent = dayInfo.day;
             dayEl.appendChild(numSpan);
 
-            // Activity dot
-            if (dayInfo.activity_level !== 'Sporadic') {
-                const dot = document.createElement('div');
-                dot.className = 'cal-day-dot';
-                if (dayInfo.activity_level === 'High') dot.classList.add('dot-high');
-                else if (dayInfo.activity_level === 'Medium') dot.classList.add('dot-med');
-                else dot.classList.add('dot-low');
-                dayEl.appendChild(dot);
-            }
+            // Activity level indicator dot
+            const dot = document.createElement('div');
+            dot.className = 'cal-day-dot';
+            if (dayInfo.activity_level === 'High') dot.classList.add('dot-high');
+            else if (dayInfo.activity_level === 'Medium') dot.classList.add('dot-med');
+            else if (dayInfo.activity_level === 'Low') dot.classList.add('dot-low');
+            else dot.classList.add('dot-spo');
+            dayEl.appendChild(dot);
 
             dayEl.addEventListener('click', () => {
                 document.querySelectorAll('.cal-day-box').forEach(d => d.classList.remove('active'));
@@ -861,7 +1000,7 @@ async function triggerPrediction(dateStr) {
         if (!res.ok) throw new Error('Prediction API failed');
         const pred = await res.json();
 
-        // Update Prediction Panel UI
+        // 1. Update Right Prediction Panel UI
         const dateBanner = document.getElementById('pred-selected-date');
         const solLonBanner = document.getElementById('pred-sol-lon');
         const actBadge = document.getElementById('pred-activity-badge');
@@ -882,9 +1021,9 @@ async function triggerPrediction(dateStr) {
             actBadge.textContent = `${pred.activity_level.toUpperCase()} ACTIVITY`;
             actBadge.className = 'activity-badge';
             if (pred.activity_level === 'High') actBadge.classList.add('badge-high');
-            else if (pred.activity_level === 'Medium') actBadge.classList.add('pill-med');
-            else if (pred.activity_level === 'Low') actBadge.classList.add('pill-low');
-            else actBadge.classList.add('pill-spo');
+            else if (pred.activity_level === 'Medium') actBadge.classList.add('badge-med');
+            else if (pred.activity_level === 'Low') actBadge.classList.add('badge-low');
+            else actBadge.classList.add('badge-spo');
         }
 
         if (confVal) confVal.textContent = pred.confidence_percentage || `${(pred.confidence * 100).toFixed(1)}%`;
@@ -898,11 +1037,10 @@ async function triggerPrediction(dateStr) {
         if (duration) duration.textContent = `${pred.predicted_duration_s}s`;
         if (provText) provText.textContent = pred.dataset_source;
 
-        // Update Left Observatory panel as well
+        // 2. Synchronize Left Observatory Panel UI
         const obsName = document.getElementById('obs-stream-name');
         const obsTier = document.getElementById('obs-stream-tier');
         const obsZhr = document.getElementById('obs-stream-zhr');
-        const obsCode = document.getElementById('obs-stream-code');
         const obsParent = document.getElementById('obs-parent');
         const obsVelocity = document.getElementById('obs-velocity');
         const obsRadiantRa = document.getElementById('obs-radiant-ra');
@@ -912,23 +1050,26 @@ async function triggerPrediction(dateStr) {
 
         if (obsName) obsName.textContent = pred.predicted_shower;
         if (obsTier) {
-            obsTier.textContent = `${pred.activity_level.toUpperCase()} ACTIVITY`;
+            obsTier.textContent = `${pred.activity_level} Activity`;
             obsTier.className = `tier-pill pill-${pred.activity_level.toLowerCase().substring(0, 3)}`;
         }
         if (obsZhr) obsZhr.textContent = `~${pred.zhr_estimate || 15} ZHR`;
-        if (obsCode) obsCode.textContent = pred.iau_code;
         if (obsParent) obsParent.textContent = pred.parent_body || 'Interplanetary Medium';
         if (obsVelocity) obsVelocity.textContent = `${pred.velocity_km_s} km/s`;
         if (obsRadiantRa && pred.radiant) obsRadiantRa.textContent = `${pred.radiant.ra}°`;
         if (obsRadiantDec && pred.radiant) obsRadiantDec.textContent = `${pred.radiant.dec > 0 ? '+' : ''}${pred.radiant.dec}°`;
         if (obsSolLon) obsSolLon.textContent = `${pred.solar_longitude}°`;
-        if (obsPeakMag) obsPeakMag.textContent = `${pred.predicted_peak_mag}`;
+        if (obsPeakMag) obsPeakMag.textContent = `${pred.predicted_peak_mag} mag`;
 
-        // Re-align 3D meteor stream to predicted shower radiant
+        // 3. Re-orient 3D Meteor Stream to match predicted shower radiant
         if (pred.iau_code && pred.iau_code !== 'SPO') {
             state.activeStreamFilter = pred.iau_code;
             const select = document.getElementById('stream-quick-select');
-            if (select) select.value = pred.iau_code;
+            if (select) {
+                const optExists = Array.from(select.options).some(o => o.value === pred.iau_code);
+                if (optExists) select.value = pred.iau_code;
+            }
+            load3DData(pred.iau_code);
         }
 
     } catch (err) {
@@ -936,8 +1077,35 @@ async function triggerPrediction(dateStr) {
     }
 }
 
+// Update Left Panel directly when a specific shower is chosen from dropdown
+function updateObservatoryPanel(showerCode) {
+    const s = getCatalogShower(showerCode);
+    const obsName = document.getElementById('obs-stream-name');
+    const obsTier = document.getElementById('obs-stream-tier');
+    const obsZhr = document.getElementById('obs-stream-zhr');
+    const obsParent = document.getElementById('obs-parent');
+    const obsVelocity = document.getElementById('obs-velocity');
+    const obsRadiantRa = document.getElementById('obs-radiant-ra');
+    const obsRadiantDec = document.getElementById('obs-radiant-dec');
+    const obsSolLon = document.getElementById('obs-sol-lon');
+    const obsPeakMag = document.getElementById('obs-peak-mag');
+
+    if (obsName) obsName.textContent = `${s.name} (${s.code})`;
+    if (obsTier) {
+        obsTier.textContent = `${s.tier} Activity`;
+        obsTier.className = `tier-pill pill-${s.tier.toLowerCase().substring(0, 3)}`;
+    }
+    if (obsZhr) obsZhr.textContent = `~${s.zhr} ZHR`;
+    if (obsParent) obsParent.textContent = s.parent;
+    if (obsVelocity) obsVelocity.textContent = `${s.vel} km/s`;
+    if (obsRadiantRa) obsRadiantRa.textContent = `${s.ra}°`;
+    if (obsRadiantDec) obsRadiantDec.textContent = `${s.dec > 0 ? '+' : ''}${s.dec}°`;
+    if (obsSolLon) obsSolLon.textContent = `${s.sol_lon}°`;
+    if (obsPeakMag) obsPeakMag.textContent = `${s.peak_mag} mag`;
+}
+
 // ==========================================================================
-// DATA FETCHING & EVENT LISTENERS
+// EVENT LISTENERS & INTERACTIVE ZOOM CONTROLS
 // ==========================================================================
 async function loadInitialData() {
     try {
@@ -992,23 +1160,27 @@ function setupEventListeners() {
     // Stream Selector
     document.getElementById('stream-quick-select')?.addEventListener('change', (e) => {
         state.activeStreamFilter = e.target.value;
+        updateObservatoryPanel(state.activeStreamFilter);
         load3DData(state.activeStreamFilter);
     });
 
     // Camera Presets
     document.getElementById('cam-earth')?.addEventListener('click', (e) => {
         setActiveCamBtn(e.target);
-        setCameraPosition(0, 0.8, 6.6);
+        animateCameraTo(new THREE.Vector3(0, 0.8, 6.6), new THREE.Vector3(0, 0, 0), 750);
     });
 
     document.getElementById('cam-radiant')?.addEventListener('click', (e) => {
         setActiveCamBtn(e.target);
-        setCameraPosition(4.8, 3.2, 4.5);
+        const s = getCatalogShower(state.activeStreamFilter);
+        const rDir = radiantToDirectionVector(s.ra, s.dec);
+        const radiantCamPos = rDir.clone().multiplyScalar(5.8);
+        animateCameraTo(radiantCamPos, new THREE.Vector3(0, 0, 0), 850);
     });
 
     document.getElementById('cam-pole')?.addEventListener('click', (e) => {
         setActiveCamBtn(e.target);
-        setCameraPosition(0, 7.8, 0.8);
+        animateCameraTo(new THREE.Vector3(0, 7.2, 0.6), new THREE.Vector3(0, 0, 0), 800);
     });
 
     function setActiveCamBtn(btn) {
@@ -1019,15 +1191,36 @@ function setupEventListeners() {
     // Floating Bottom Controls Bar
     document.getElementById('toggle-animation')?.addEventListener('click', (e) => {
         state.animationRunning = !state.animationRunning;
-        e.target.textContent = state.animationRunning ? '⏸️' : '▶️';
+        e.target.textContent = state.animationRunning ? '⏸️ Pause' : '▶️ Resume';
     });
 
-    document.getElementById('toggle-earth')?.addEventListener('click', (e) => {
-        state.showEarth = !state.showEarth;
-        if (earthMesh) earthMesh.visible = state.showEarth;
-        e.target.classList.toggle('active', state.showEarth);
+    // Interactive Earth Zoom Controls
+    document.getElementById('btn-zoom-in')?.addEventListener('click', () => {
+        if (!camera) return;
+        const currentDist = camera.position.distanceTo(controls.target);
+        const newDist = Math.max(controls.minDistance, currentDist * 0.78);
+        const newPos = camera.position.clone().sub(controls.target).normalize().multiplyScalar(newDist).add(controls.target);
+        animateCameraTo(newPos, controls.target, 450);
     });
 
+    document.getElementById('btn-zoom-out')?.addEventListener('click', () => {
+        if (!camera) return;
+        const currentDist = camera.position.distanceTo(controls.target);
+        const newDist = Math.min(controls.maxDistance, currentDist * 1.28);
+        const newPos = camera.position.clone().sub(controls.target).normalize().multiplyScalar(newDist).add(controls.target);
+        animateCameraTo(newPos, controls.target, 450);
+    });
+
+    document.getElementById('btn-fit-screen')?.addEventListener('click', () => {
+        // Fits Earth to ~60% of viewport
+        animateCameraTo(new THREE.Vector3(0, 0.6, 5.2), new THREE.Vector3(0, 0, 0), 650);
+    });
+
+    document.getElementById('reset-camera')?.addEventListener('click', () => {
+        animateCameraTo(new THREE.Vector3(0, 0.8, 6.6), new THREE.Vector3(0, 0, 0), 700);
+    });
+
+    // Layer Toggles
     document.getElementById('toggle-clouds')?.addEventListener('click', (e) => {
         state.showClouds = !state.showClouds;
         if (cloudsMesh) cloudsMesh.visible = state.showClouds;
@@ -1040,37 +1233,12 @@ function setupEventListeners() {
         e.target.classList.toggle('active', state.showAtmos);
     });
 
-    document.getElementById('toggle-grid')?.addEventListener('click', (e) => {
-        state.showGrid = !state.showGrid;
-        if (gridMesh) gridMesh.visible = state.showGrid;
-        e.target.classList.toggle('active', state.showGrid);
-    });
-
     document.getElementById('toggle-meteors')?.addEventListener('click', (e) => {
         state.showMeteors = !state.showMeteors;
         e.target.classList.toggle('active', state.showMeteors);
     });
 
-    document.getElementById('btn-zoom-in')?.addEventListener('click', () => {
-        if (!camera) return;
-        const dir = camera.position.clone().normalize();
-        camera.position.sub(dir.multiplyScalar(0.7));
-        if (controls) controls.update();
-    });
-
-    document.getElementById('btn-zoom-out')?.addEventListener('click', () => {
-        if (!camera) return;
-        const dir = camera.position.clone().normalize();
-        camera.position.add(dir.multiplyScalar(0.7));
-        if (controls) controls.update();
-    });
-
-    document.getElementById('reset-rotation')?.addEventListener('click', () => {
-        setCameraPosition(0, 0.8, 6.6);
-        if (earthMesh) earthMesh.rotation.y = 0;
-        if (controls) controls.target.set(0, 0, 0);
-    });
-
+    // Speed Slider
     const speedSlider = document.getElementById('speed-slider');
     const speedVal = document.getElementById('speed-val');
     if (speedSlider) {
@@ -1079,12 +1247,6 @@ function setupEventListeners() {
             if (speedVal) speedVal.textContent = `${state.speedMultiplier.toFixed(1)}x`;
         });
     }
-
-    // Align 3D Earth Action
-    document.getElementById('btn-focus-stream')?.addEventListener('click', () => {
-        load3DData(state.activeStreamFilter);
-        setCameraPosition(3.8, 2.5, 5.2);
-    });
 
     // Predictor Lab Form & Presets
     setupPredictorLab();
@@ -1098,12 +1260,6 @@ function setupEventListeners() {
             document.getElementById('modal')?.classList.add('hidden');
         });
     });
-}
-
-function setCameraPosition(x, y, z) {
-    if (!camera) return;
-    camera.position.set(x, y, z);
-    if (controls) controls.update();
 }
 
 function onWindowResize() {
@@ -1142,7 +1298,7 @@ function onMouseMove(event) {
             document.getElementById('tip-vel').textContent = item.vgeo != null ? `${item.vgeo.toFixed(1)} km/s` : '-';
             document.getElementById('tip-peak').textContent = item.peak != null ? `${item.peak.toFixed(1)} mag` : '-';
             document.getElementById('tip-dur').textContent = item.duration != null ? `${item.duration.toFixed(2)}s` : '-';
-            document.getElementById('tip-loc').textContent = item.lat_beg != null ? `${item.lat_beg.toFixed(1)}°, ${item.lon_beg?.toFixed(1)}°` : 'Space Orbit';
+            document.getElementById('tip-loc').textContent = item.lat_beg != null ? `${item.lat_beg.toFixed(1)}°, ${item.lon_beg?.toFixed(1)}°` : 'Space Trajectory';
             document.getElementById('tip-alt').textContent = item.ht_beg != null ? `${item.ht_beg.toFixed(1)} km` : '100 km';
             tooltip.classList.remove('hidden');
         }
@@ -1162,7 +1318,7 @@ function renderDashboard() {
     document.getElementById('metric-sporadic').textContent = state.stats.sporadic?.toLocaleString() || '3,664';
     document.getElementById('metric-unique').textContent = state.stats.unique_showers || '32';
     document.getElementById('metric-vel').textContent = `${(state.stats.avg_velocity || 40.3).toFixed(1)} km/s`;
-    document.getElementById('metric-peak').textContent = `${(state.stats.avg_peak || 0.04).toFixed(2)} mag`;
+    document.getElementById('metric-peak').textContent = `${(state.stats.avg_peak || 0.04).toFixed(2)}`;
 
     const carousel = document.getElementById('major-showers-list');
     if (carousel) {
@@ -1222,7 +1378,11 @@ window.focusShower = (code) => {
     state.activeStreamFilter = code;
     switchView('3d');
     const select = document.getElementById('stream-quick-select');
-    if (select) select.value = code;
+    if (select) {
+        const optExists = Array.from(select.options).some(o => o.value === code);
+        if (optExists) select.value = code;
+    }
+    updateObservatoryPanel(code);
     load3DData(code);
 };
 
