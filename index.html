@@ -3,8 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>METEOR VISION – AI-Based Meteor Shower Prediction System</title>
+    <title>METEOR VISION – AI-Powered Meteor Shower Observatory</title>
+    
+    <!-- Professional Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@500;700;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
     <link rel="stylesheet" href="css/style.css">
+    
+    <!-- Three.js ES Modules -->
     <script type="importmap">
     {
         "imports": {
@@ -20,25 +28,26 @@
         <div class="loader-content">
             <div class="meteor-icon">☄️</div>
             <h1>METEOR VISION</h1>
-            <p class="loader-subtitle">AI-BASED METEOR SHOWER PREDICTION SYSTEM</p>
+            <p class="loader-subtitle">AI-POWERED METEOR SHOWER OBSERVATORY</p>
             <div class="loader-bar"><div class="loader-progress"></div></div>
-            <p id="loading-text">Initializing 3D Planetary Engine & AI Models...</p>
+            <p id="loading-text">Calibrating 3D Planetary Sphere & AI Models...</p>
         </div>
     </div>
 
     <div id="app" style="display:none;">
-        <!-- Top Navigation -->
-        <nav class="navbar">
+        <!-- TOP NAVIGATION BAR -->
+        <header class="navbar">
             <div class="logo">
                 <span class="logo-icon">☄️</span>
                 <div class="logo-titles">
-                    <span class="logo-text">METEOR<span class="accent">VISION</span></span>
-                    <span class="logo-tag">NASA / CAMS AI OBSERVATORY</span>
+                    <span class="logo-text">METEOR <span class="accent">VISION</span></span>
+                    <span class="logo-tag">AI-POWERED METEOR SHOWER OBSERVATORY</span>
                 </div>
             </div>
-            <div class="nav-links">
+
+            <nav class="nav-links">
                 <button class="nav-btn active" data-view="3d">
-                    <span class="icon">🌌</span> 3D Cosmos
+                    <span class="icon">🌍</span> 3D Earth Observatory
                 </button>
                 <button class="nav-btn" data-view="dashboard">
                     <span class="icon">📊</span> Dashboard
@@ -52,350 +61,442 @@
                 <button class="nav-btn" data-view="data">
                     <span class="icon">📁</span> Data Explorer
                 </button>
-            </div>
-            <div class="status-indicator">
+            </nav>
+
+            <div class="engine-status">
                 <span class="status-dot"></span>
-                <span id="status-text">AI Engine Active</span>
+                <div class="status-texts">
+                    <span class="status-title">RANDOM FOREST ENGINE</span>
+                    <span class="status-sub">ACTIVE • 91.97% TEST ACCURACY</span>
+                </div>
             </div>
-        </nav>
+        </header>
 
-        <!-- VIEW 1: 3D Cosmos Main Dashboard -->
+        <!-- ===================================================================
+             VIEW 1: 3D EARTH OBSERVATORY (MAIN SCREEN)
+             Layout: Left Panel | Center 3D Earth (55-65%) | Right Panel
+             =================================================================== -->
         <div id="view-3d" class="view active">
-            <!-- Three.js Canvas Container -->
-            <div id="scene-container"></div>
-            
-            <!-- HUD Top Left: Observatory Status & Stream Filter -->
-            <div class="hud-top-left">
-                <div class="hud-panel observatory-card">
-                    <div class="card-tag">ORBITAL OBSERVATORY</div>
-                    <div class="stream-status">
-                        <span class="pulse-indicator"></span>
-                        <span id="active-stream-title">ACTIVE STREAM: QUADRANTIDS</span>
-                    </div>
-                    <div class="stream-badge-row">
-                        <span class="tier-badge badge-high" id="active-stream-tier">HIGH ACTIVITY</span>
-                        <span class="zhr-badge" id="active-stream-zhr">~110 ZHR</span>
-                    </div>
-                    
-                    <div class="stream-selector-wrap">
-                        <label for="stream-quick-select">Target Shower Stream:</label>
-                        <select id="stream-quick-select" class="hud-select">
-                            <option value="ALL">All Active Streams</option>
-                            <option value="QUA" selected>Quadrantids (QUA) - Peak Jan 3-4</option>
-                            <option value="COM">Comae Berenicids (COM)</option>
-                            <option value="AHY">alpha Hydrids (AHY)</option>
-                            <option value="NCC">Northern chi Orionids (NCC)</option>
-                            <option value="SCC">Southern chi Orionids (SCC)</option>
-                            <option value="LYR">Lyrids (LYR) - Peak Apr 22</option>
-                            <option value="ETA">eta Aquariids (ETA) - Peak May 6</option>
-                            <option value="PER">Perseids (PER) - Peak Aug 12-13</option>
-                            <option value="ORI">Orionids (ORI) - Peak Oct 21</option>
-                            <option value="LEO">Leonids (LEO) - Peak Nov 17</option>
-                            <option value="GEM">Geminids (GEM) - Peak Dec 13-14</option>
-                        </select>
-                    </div>
-
-                    <div class="camera-presets">
-                        <button class="chip-btn active" id="cam-earth">🌍 Earth Center</button>
-                        <button class="chip-btn" id="cam-radiant">🎯 Radiant View</button>
-                        <button class="chip-btn" id="cam-pole">❄️ Polar Orbit</button>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- HUD Top Center: Live Telemetry Banner -->
-            <div class="hud-top-center">
-                <div class="telemetry-bar">
-                    <div class="telemetry-item">
-                        <span class="label">SOLAR LONGITUDE</span>
-                        <span class="val" id="hud-sol-lon">283.4°</span>
-                    </div>
-                    <div class="telemetry-divider"></div>
-                    <div class="telemetry-item">
-                        <span class="label">ENTRY VELOCITY</span>
-                        <span class="val" id="hud-entry-vel">41.2 km/s</span>
-                    </div>
-                    <div class="telemetry-divider"></div>
-                    <div class="telemetry-item">
-                        <span class="label">ACTIVE METEORS</span>
-                        <span class="val" id="active-count">0</span>
-                    </div>
-                    <div class="telemetry-divider"></div>
-                    <div class="telemetry-item">
-                        <span class="label">FRAME RATE</span>
-                        <span class="val" id="fps">60 FPS</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- HUD Right: Interactive Prediction Calendar & ML Prediction Panel -->
-            <div class="hud-right-panel">
-                <!-- Section 1: Interactive Prediction Calendar -->
-                <div class="hud-panel calendar-card">
-                    <div class="panel-header">
-                        <div class="card-tag">PREDICTION CALENDAR</div>
-                        <span class="help-hint">Select any date to predict</span>
-                    </div>
-                    
-                    <div class="calendar-controls">
-                        <button class="cal-nav-btn" id="cal-prev" title="Previous Month">◀</button>
-                        <div class="cal-month-display" id="cal-month-display">January 2025</div>
-                        <button class="cal-nav-btn" id="cal-next" title="Next Month">▶</button>
-                        <button class="cal-today-btn" id="cal-today">Today</button>
-                    </div>
-
-                    <div class="calendar-legend">
-                        <span class="legend-item"><span class="dot dot-high"></span> High</span>
-                        <span class="legend-item"><span class="dot dot-med"></span> Med</span>
-                        <span class="legend-item"><span class="dot dot-low"></span> Low</span>
-                        <span class="legend-item"><span class="dot dot-spo"></span> Sporadic</span>
-                    </div>
-
-                    <div class="calendar-grid-header">
-                        <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
-                    </div>
-                    <div class="calendar-grid" id="calendar-grid">
-                        <!-- Populated dynamically via JS -->
-                    </div>
-                </div>
-
-                <!-- Section 2: Machine Learning Prediction Panel -->
-                <div class="hud-panel prediction-result-card" id="prediction-panel">
-                    <div class="panel-header">
-                        <div class="card-tag">AI PREDICTION INFERENCE</div>
-                        <span class="ai-badge">RANDOM FOREST</span>
-                    </div>
-                    
-                    <div class="pred-date-banner">
-                        <div class="pred-date-text" id="pred-selected-date">January 03, 2025</div>
-                        <div class="pred-solar-lon" id="pred-sol-lon">λ⊙ 283.36° (Day 3)</div>
-                    </div>
-
-                    <div class="pred-activity-block">
-                        <div class="activity-pill-wrap">
-                            <span class="activity-label">PREDICTED ACTIVITY:</span>
-                            <span class="activity-pill pill-high" id="pred-activity-badge">HIGH ACTIVITY</span>
+            <div class="observatory-layout">
+                
+                <!-- 1. LEFT OBSERVATORY PANEL -->
+                <aside class="panel-left">
+                    <div class="hud-panel glass-panel">
+                        <div class="panel-title-bar">
+                            <span class="section-tag">STREAM TELEMETRY</span>
+                            <span class="live-pill"><span class="live-dot"></span> OBSERVING</span>
                         </div>
-                        <div class="confidence-meter-wrap">
-                            <div class="conf-labels">
-                                <span>Model Confidence</span>
-                                <span id="pred-confidence-val">94.0%</span>
+
+                        <!-- Active Stream Card -->
+                        <div class="stream-summary-card">
+                            <span class="stream-label">CURRENT TARGET STREAM</span>
+                            <h3 class="stream-name" id="obs-stream-name">Quadrantids</h3>
+                            <div class="stream-meta-row">
+                                <span class="tier-pill pill-high" id="obs-stream-tier">HIGH ACTIVITY</span>
+                                <span class="zhr-pill" id="obs-stream-zhr">~110 ZHR</span>
+                                <span class="iau-code" id="obs-stream-code">QUA</span>
                             </div>
-                            <div class="conf-bar"><div class="conf-fill" id="pred-conf-fill" style="width: 94%;"></div></div>
+                        </div>
+
+                        <!-- Target Shower Selection -->
+                        <div class="form-group-compact">
+                            <label for="stream-quick-select">Select Shower Stream Target:</label>
+                            <select id="stream-quick-select" class="hud-select-styled">
+                                <option value="ALL">All Active Streams (Global)</option>
+                                <option value="QUA" selected>Quadrantids (QUA) • Jan Peak</option>
+                                <option value="LYR">Lyrids (LYR) • Apr Peak</option>
+                                <option value="ETA">eta Aquariids (ETA) • May Peak</option>
+                                <option value="SDA">Southern delta Aquariids (SDA) • Jul</option>
+                                <option value="PER">Perseids (PER) • Aug Peak</option>
+                                <option value="ORI">Orionids (ORI) • Oct Peak</option>
+                                <option value="LEO">Leonids (LEO) • Nov Peak</option>
+                                <option value="GEM">Geminids (GEM) • Dec Peak</option>
+                                <option value="URS">Ursids (URS) • Dec Peak</option>
+                                <option value="COM">Comae Berenicids (COM)</option>
+                                <option value="AHY">alpha Hydrids (AHY)</option>
+                                <option value="NCC">Northern chi Orionids (NCC)</option>
+                                <option value="SCC">Southern chi Orionids (SCC)</option>
+                            </select>
+                        </div>
+
+                        <!-- Physical Stream Parameters -->
+                        <div class="spec-grid">
+                            <div class="spec-cell">
+                                <span class="s-label">PARENT BODY</span>
+                                <span class="s-val" id="obs-parent">Asteroid 2003 EH1</span>
+                            </div>
+                            <div class="spec-cell">
+                                <span class="s-label">ENTRY VELOCITY</span>
+                                <span class="s-val numeric" id="obs-velocity">41.2 km/s</span>
+                            </div>
+                            <div class="spec-cell">
+                                <span class="s-label">RADIANT RA</span>
+                                <span class="s-val numeric" id="obs-radiant-ra">230.1°</span>
+                            </div>
+                            <div class="spec-cell">
+                                <span class="s-label">RADIANT DEC</span>
+                                <span class="s-val numeric" id="obs-radiant-dec">+49.5°</span>
+                            </div>
+                            <div class="spec-cell">
+                                <span class="s-label">SOLAR LON (λ⊙)</span>
+                                <span class="s-val numeric" id="obs-sol-lon">283.4°</span>
+                            </div>
+                            <div class="spec-cell">
+                                <span class="s-label">EST. PEAK MAG</span>
+                                <span class="s-val numeric" id="obs-peak-mag">-0.32</span>
+                            </div>
+                        </div>
+
+                        <!-- Visualization Camera Views -->
+                        <div class="camera-mode-section">
+                            <span class="sub-label">CAMERA PERSPECTIVE</span>
+                            <div class="camera-btn-row">
+                                <button class="cam-btn active" id="cam-earth" title="Earth Center View">
+                                    🌍 Center
+                                </button>
+                                <button class="cam-btn" id="cam-radiant" title="Radiant Perspective">
+                                    🎯 Radiant
+                                </button>
+                                <button class="cam-btn" id="cam-pole" title="Polar Orbit View">
+                                    ❄️ Polar
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Live Telemetry Badges -->
+                        <div class="telemetry-badges">
+                            <div class="t-badge">
+                                <span class="t-lbl">ACTIVE METEORS</span>
+                                <span class="t-num numeric" id="active-count">0</span>
+                            </div>
+                            <div class="t-badge">
+                                <span class="t-lbl">SIMULATION FPS</span>
+                                <span class="t-num numeric" id="fps">60 FPS</span>
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+
+                <!-- 2. CENTER STAGE: 3D EARTH VIEWPORT (55-65% WIDTH) -->
+                <main class="center-stage">
+                    <div id="scene-container"></div>
+
+                    <!-- Atmospheric Coordinate Overlay Indicator -->
+                    <div class="globe-overlay-indicator">
+                        <span class="coord-tag" id="globe-coords">LAT: 0.0° • LON: 0.0° • TILT: 23.44°</span>
+                    </div>
+
+                    <!-- FLOATING BOTTOM VISUALIZATION CONTROLS -->
+                    <div class="stage-bottom-controls">
+                        <div class="controls-glass-bar">
+                            <button class="stage-ctrl-btn play-btn" id="toggle-animation" title="Play / Pause Simulation">
+                                ⏸️
+                            </button>
+                            <div class="btn-divider"></div>
+                            <button class="stage-ctrl-btn active" id="toggle-earth" title="Toggle 3D Earth Visibility">
+                                🌍 Earth
+                            </button>
+                            <button class="stage-ctrl-btn active" id="toggle-clouds" title="Toggle Swirling Clouds">
+                                ☁️ Clouds
+                            </button>
+                            <button class="stage-ctrl-btn active" id="toggle-atmos" title="Toggle Rayleigh Atmosphere">
+                                ✨ Glow
+                            </button>
+                            <button class="stage-ctrl-btn active" id="toggle-grid" title="Toggle Coordinate Grid">
+                                🌐 Grid
+                            </button>
+                            <button class="stage-ctrl-btn active" id="toggle-meteors" title="Toggle Meteor Streaks">
+                                💫 Meteors
+                            </button>
+                            <div class="btn-divider"></div>
+                            <button class="stage-ctrl-btn" id="btn-zoom-in" title="Zoom In (+)">
+                                🔍+
+                            </button>
+                            <button class="stage-ctrl-btn" id="btn-zoom-out" title="Zoom Out (-)">
+                                🔍-
+                            </button>
+                            <button class="stage-ctrl-btn" id="reset-rotation" title="Reset Earth View & Rotation">
+                                🎯 Reset
+                            </button>
+                            <div class="btn-divider"></div>
+                            <!-- Speed Control -->
+                            <div class="speed-slider-wrap">
+                                <span class="speed-label">SPEED:</span>
+                                <input type="range" id="speed-slider" min="0.2" max="4.0" step="0.2" value="1.0">
+                                <span class="speed-val numeric" id="speed-val">1.0x</span>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+
+                <!-- 3. RIGHT PREDICTION CALENDAR & AI PREDICTION PANEL -->
+                <aside class="panel-right">
+                    <!-- Calendar Section -->
+                    <div class="hud-panel glass-panel calendar-hud-card">
+                        <div class="panel-title-bar">
+                            <span class="section-tag">PREDICTION CALENDAR</span>
+                            <button class="cal-today-action" id="cal-today">Today</button>
+                        </div>
+
+                        <div class="cal-header-bar">
+                            <button class="cal-arrow-btn" id="cal-prev" title="Previous Month">◀</button>
+                            <span class="cal-month-title" id="cal-month-display">January 2025</span>
+                            <button class="cal-arrow-btn" id="cal-next" title="Next Month">▶</button>
+                        </div>
+
+                        <!-- Activity Level Legend -->
+                        <div class="calendar-activity-legend">
+                            <span class="leg-item"><span class="leg-dot dot-high"></span> High</span>
+                            <span class="leg-item"><span class="leg-dot dot-med"></span> Medium</span>
+                            <span class="leg-item"><span class="leg-dot dot-low"></span> Low</span>
+                            <span class="leg-item"><span class="leg-dot dot-spo"></span> Sporadic</span>
+                        </div>
+
+                        <!-- Days of Week Header -->
+                        <div class="cal-weekdays-row">
+                            <span>SU</span><span>MO</span><span>TU</span><span>WE</span><span>TH</span><span>FR</span><span>SA</span>
+                        </div>
+
+                        <!-- 7-Column Days Grid -->
+                        <div class="cal-days-grid" id="calendar-grid">
+                            <!-- Populated dynamically via JS -->
                         </div>
                     </div>
 
-                    <div class="pred-metrics-grid">
-                        <div class="pred-metric">
-                            <span class="m-label">Predicted Shower</span>
-                            <span class="m-val highlight" id="pred-shower-name">Quadrantids (QUA)</span>
+                    <!-- AI Prediction Inference Card -->
+                    <div class="hud-panel glass-panel prediction-hud-card">
+                        <div class="panel-title-bar">
+                            <span class="section-tag">AI PREDICTION INFERENCE</span>
+                            <span class="ai-model-tag">RANDOM FOREST</span>
                         </div>
-                        <div class="pred-metric">
-                            <span class="m-label">Parent Celestial Body</span>
-                            <span class="m-val" id="pred-parent-body">Asteroid 2003 EH1</span>
-                        </div>
-                        <div class="pred-metric">
-                            <span class="m-label">Radiant Coordinates</span>
-                            <span class="m-val" id="pred-radiant">RA 230.1° / DEC +49.5°</span>
-                        </div>
-                        <div class="pred-metric">
-                            <span class="m-label">Geocentric Velocity</span>
-                            <span class="m-val" id="pred-velocity">41.2 km/s</span>
-                        </div>
-                        <div class="pred-metric">
-                            <span class="m-label">Expected Peak Mag</span>
-                            <span class="m-val" id="pred-peak-mag">-0.5 (Brilliant)</span>
-                        </div>
-                        <div class="pred-metric">
-                            <span class="m-label">Expected Duration</span>
-                            <span class="m-val" id="pred-duration">0.55s</span>
-                        </div>
-                    </div>
 
-                    <div class="pred-provenance">
-                        <span class="prov-icon">ℹ️</span>
-                        <span id="pred-provenance-text">NASA CAMS 2025 High-Density In-Sample Observation Data</span>
-                    </div>
+                        <!-- Selected Date Header -->
+                        <div class="pred-date-box">
+                            <div class="pred-date-heading" id="pred-selected-date">January 03, 2025</div>
+                            <div class="pred-sol-coord numeric" id="pred-sol-lon">SOLAR LONGITUDE: 283.36° • DAY 3</div>
+                        </div>
 
-                    <button class="btn btn-primary btn-block" id="btn-focus-stream">
-                        🚀 Simulate Stream in 3D
-                    </button>
-                </div>
+                        <!-- Predicted Activity Badge -->
+                        <div class="pred-result-banner">
+                            <div class="activity-result-left">
+                                <span class="activity-lbl">PREDICTED ACTIVITY</span>
+                                <span class="activity-badge badge-high" id="pred-activity-badge">HIGH ACTIVITY</span>
+                            </div>
+                            <div class="activity-result-right">
+                                <span class="confidence-lbl">CONFIDENCE</span>
+                                <span class="confidence-val numeric" id="pred-confidence-val">94.0%</span>
+                            </div>
+                        </div>
+
+                        <!-- Probability Fill Bar -->
+                        <div class="confidence-track">
+                            <div class="confidence-progress" id="pred-conf-fill" style="width: 94%;"></div>
+                        </div>
+
+                        <!-- Key ML Outputs Grid -->
+                        <div class="pred-outputs-grid">
+                            <div class="out-box">
+                                <span class="out-lbl">SHOWER CLASSIFICATION</span>
+                                <span class="out-val highlight" id="pred-shower-name">Quadrantids (QUA)</span>
+                            </div>
+                            <div class="out-box">
+                                <span class="out-lbl">PARENT ASTEROID/COMET</span>
+                                <span class="out-val" id="pred-parent-body">Asteroid 2003 EH1</span>
+                            </div>
+                            <div class="out-box">
+                                <span class="out-lbl">RADIANT (RA / DEC)</span>
+                                <span class="out-val numeric" id="pred-radiant">230.1° / +49.5°</span>
+                            </div>
+                            <div class="out-box">
+                                <span class="out-lbl">GEOCENTRIC VELOCITY</span>
+                                <span class="out-val numeric" id="pred-velocity">41.2 km/s</span>
+                            </div>
+                            <div class="out-box">
+                                <span class="out-lbl">EXPECTED PEAK MAG</span>
+                                <span class="out-val numeric" id="pred-peak-mag">-0.32 mag</span>
+                            </div>
+                            <div class="out-box">
+                                <span class="out-lbl">EXPECTED DURATION</span>
+                                <span class="out-val numeric" id="pred-duration">0.54s</span>
+                            </div>
+                        </div>
+
+                        <!-- Provenance / Dataset Note -->
+                        <div class="provenance-note">
+                            <span class="prov-icon">ℹ️</span>
+                            <span id="pred-provenance-text">NASA CAMS 2025 High-Density In-Sample Observation Data</span>
+                        </div>
+
+                        <!-- Interactive Action -->
+                        <button class="btn btn-action-stream" id="btn-focus-stream">
+                            🚀 Align 3D Earth to Radiant Stream
+                        </button>
+                    </div>
+                </aside>
             </div>
-            
-            <!-- HUD Bottom Center: Controls Bar -->
-            <div class="hud-bottom-center">
-                <div class="control-bar">
-                    <button class="ctrl-btn play-btn" id="toggle-animation" title="Play/Pause Simulation">⏸️</button>
-                    <button class="ctrl-btn active" id="toggle-earth" title="Toggle 3D Earth">🌍</button>
-                    <button class="ctrl-btn active" id="toggle-grid" title="Toggle Lat/Lon Coordinate Grid">🌐</button>
-                    <button class="ctrl-btn active" id="toggle-clouds" title="Toggle Cloud Layer">☁️</button>
-                    <button class="ctrl-btn active" id="toggle-atmos" title="Toggle Atmospheric Halo">✨</button>
-                    <button class="ctrl-btn active" id="toggle-trails" title="Toggle Meteor Trails">💫</button>
-                    <button class="ctrl-btn active" id="toggle-stars" title="Toggle Starfield">⭐</button>
-                    <button class="ctrl-btn" id="reset-camera" title="Reset Camera View">🎯</button>
-                    <button class="ctrl-btn" id="density-btn" title="Meteor Density">
-                        <span id="density-val">300</span> 🌠
-                    </button>
-                    <div class="speed-control">
-                        <label>⏱️ Speed:</label>
-                        <input type="range" id="speed-slider" min="0.2" max="4.0" step="0.2" value="1.0">
-                        <span id="speed-val">1.0x</span>
-                    </div>
+
+            <!-- Hover Meteor Tooltip -->
+            <div id="meteor-tooltip" class="tooltip hidden">
+                <div class="tip-header">
+                    <span class="tip-tag">METEOR OBSERVATION</span>
+                    <h4 id="tip-id" class="numeric">Trajectory ID</h4>
                 </div>
-            </div>
-            
-            <!-- Tooltip for hovered meteors -->
-            <div class="hud-bottom-left">
-                <div id="meteor-tooltip" class="tooltip hidden">
-                    <div class="tip-header">
-                        <span class="tip-badge">METEOR TRAJECTORY</span>
-                        <h4 id="tip-id">Unique Trajectory</h4>
-                    </div>
-                    <div class="tip-body">
-                        <p>Shower: <span id="tip-shower" class="highlight">-</span></p>
-                        <p>Velocity: <span id="tip-vel">-</span></p>
-                        <p>Peak Mag: <span id="tip-peak">-</span></p>
-                        <p>Duration: <span id="tip-dur">-</span></p>
-                        <p>Entry Location: <span id="tip-loc">-</span></p>
-                        <p>Altitude: <span id="tip-alt">-</span></p>
-                    </div>
+                <div class="tip-body">
+                    <p>Shower: <strong id="tip-shower" class="highlight">-</strong></p>
+                    <p>Velocity: <span id="tip-vel" class="numeric">-</span></p>
+                    <p>Peak Mag: <span id="tip-peak" class="numeric">-</span></p>
+                    <p>Duration: <span id="tip-dur" class="numeric">-</span></p>
+                    <p>Coordinates: <span id="tip-loc" class="numeric">-</span></p>
+                    <p>Altitude: <span id="tip-alt" class="numeric">-</span></p>
                 </div>
             </div>
         </div>
 
-        <!-- VIEW 2: Dashboard View -->
+        <!-- ===================================================================
+             VIEW 2: OBSERVATORY DASHBOARD
+             =================================================================== -->
         <div id="view-dashboard" class="view">
-            <div class="dashboard-grid">
-                <div class="card metric-card gradient-1">
-                    <div class="card-icon">☄️</div>
-                    <div class="card-content">
-                        <span class="metric-label">Total Meteor Records</span>
-                        <span class="metric-value" id="metric-total">4,733</span>
-                        <span class="metric-sub">NASA CAMS 2025 Dataset</span>
-                    </div>
+            <div class="dashboard-container">
+                <div class="dashboard-header-block">
+                    <h2>OBSERVATORY TELEMETRY & ANALYTICS</h2>
+                    <p>NASA CAMS High-Density Meteor Observation Campaign • Real-Time Telemetry & Planetary Metrics</p>
                 </div>
-                <div class="card metric-card gradient-2">
-                    <div class="card-icon">🌟</div>
-                    <div class="card-content">
-                        <span class="metric-label">Classified Shower Events</span>
-                        <span class="metric-value" id="metric-known">1,069</span>
-                        <span class="metric-sub">Known Stream Detections</span>
+
+                <div class="stats-cards-grid">
+                    <div class="dash-card">
+                        <div class="d-icon">☄️</div>
+                        <div class="d-body">
+                            <span class="d-label">TOTAL METEOR OBSERVATIONS</span>
+                            <span class="d-val numeric" id="metric-total">4,733</span>
+                            <span class="d-sub">Multi-Station Triangulation</span>
+                        </div>
                     </div>
-                </div>
-                <div class="card metric-card gradient-3">
-                    <div class="card-icon">🌀</div>
-                    <div class="card-content">
-                        <span class="metric-label">Sporadic Meteors</span>
-                        <span class="metric-value" id="metric-sporadic">3,664</span>
-                        <span class="metric-sub">Interplanetary Background</span>
+                    <div class="dash-card">
+                        <div class="d-icon">🌟</div>
+                        <div class="d-body">
+                            <span class="d-label">CLASSIFIED SHOWER EVENTS</span>
+                            <span class="d-val numeric" id="metric-known">1,069</span>
+                            <span class="d-sub">Confirmed Stream Encounters</span>
+                        </div>
                     </div>
-                </div>
-                <div class="card metric-card gradient-4">
-                    <div class="card-icon">🔬</div>
-                    <div class="card-content">
-                        <span class="metric-label">Cataloged Shower Types</span>
-                        <span class="metric-value" id="metric-unique">32</span>
-                        <span class="metric-sub">IAU Official Codes</span>
+                    <div class="dash-card">
+                        <div class="d-icon">🌀</div>
+                        <div class="d-body">
+                            <span class="d-label">SPORADIC FLUX</span>
+                            <span class="d-val numeric" id="metric-sporadic">3,664</span>
+                            <span class="d-sub">Interplanetary Dust Background</span>
+                        </div>
                     </div>
-                </div>
-                <div class="card metric-card gradient-5">
-                    <div class="card-icon">⚡</div>
-                    <div class="card-content">
-                        <span class="metric-label">Median Entry Velocity</span>
-                        <span class="metric-value" id="metric-vel">40.3 km/s</span>
-                        <span class="metric-sub">Range: 19 - 71 km/s</span>
+                    <div class="dash-card">
+                        <div class="d-icon">🔬</div>
+                        <div class="d-body">
+                            <span class="d-label">CATALOGED IAU SHOWERS</span>
+                            <span class="d-val numeric" id="metric-unique">32</span>
+                            <span class="d-sub">Distinct Meteor Stream Types</span>
+                        </div>
                     </div>
-                </div>
-                <div class="card metric-card gradient-6">
-                    <div class="card-icon">💡</div>
-                    <div class="card-content">
-                        <span class="metric-label">Median Peak Magnitude</span>
-                        <span class="metric-value" id="metric-peak">0.04</span>
-                        <span class="metric-sub">Brighter Than Vega (0.0)</span>
+                    <div class="dash-card">
+                        <div class="d-icon">⚡</div>
+                        <div class="d-body">
+                            <span class="d-label">MEDIAN VELOCITY</span>
+                            <span class="d-val numeric" id="metric-vel">40.3 km/s</span>
+                            <span class="d-sub">Orbital Range: 19 - 71 km/s</span>
+                        </div>
+                    </div>
+                    <div class="dash-card">
+                        <div class="d-icon">💡</div>
+                        <div class="d-body">
+                            <span class="d-label">MEDIAN PEAK MAGNITUDE</span>
+                            <span class="d-val numeric" id="metric-peak">0.04</span>
+                            <span class="d-sub">Brighter Than Star Vega (0.0)</span>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Annual Major Shower Peaks Carousel -->
-                <div class="card full-width-card">
-                    <div class="card-header">
-                        <h3>🗓️ Annual Major Meteor Shower Calendar</h3>
-                        <span class="card-badge">IAU MDC Reference</span>
+                <!-- Annual Major Showers Calendar Carousel -->
+                <div class="dash-card-full">
+                    <div class="section-header-row">
+                        <h3>🗓️ Annual Major Meteor Shower Almanac (IAU MDC)</h3>
+                        <span class="header-badge">ANNUAL CALENDAR</span>
                     </div>
                     <div class="showers-carousel" id="major-showers-list">
                         <!-- Populated by JS -->
                     </div>
                 </div>
 
-                <!-- Top Showers in Dataset -->
-                <div class="card chart-card">
-                    <div class="card-header">
-                        <h3>🏆 Top Detected Showers in Dataset</h3>
+                <div class="dash-two-column">
+                    <div class="dash-card-section">
+                        <div class="section-header-row">
+                            <h3>🏆 Top Detected Meteor Streams in Dataset</h3>
+                        </div>
+                        <div class="top-showers-container" id="top-showers-list">
+                            <!-- Populated by JS -->
+                        </div>
                     </div>
-                    <div class="showers-list" id="top-showers-list">
-                        <!-- Populated by JS -->
-                    </div>
-                </div>
 
-                <!-- Activity Level Distribution -->
-                <div class="card chart-card">
-                    <div class="card-header">
-                        <h3>🎯 Activity Distribution & Classification</h3>
-                    </div>
-                    <div class="activity-bars-wrap" id="activity-dist-wrap">
-                        <!-- Populated by JS -->
+                    <div class="dash-card-section">
+                        <div class="section-header-row">
+                            <h3>🎯 Activity Classification Distribution</h3>
+                        </div>
+                        <div class="activity-bars-wrap" id="activity-dist-wrap">
+                            <!-- Populated by JS -->
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- VIEW 3: AI Model & Metrics (Dedicated Model Evaluation View) -->
+        <!-- ===================================================================
+             VIEW 3: AI MODEL & METRICS (RANDOM FOREST EVALUATION)
+             =================================================================== -->
         <div id="view-model" class="view">
             <div class="model-view-container">
                 <div class="model-hero-card">
                     <div class="hero-left">
                         <span class="badge-tag">MACHINE LEARNING ARCHITECTURE</span>
-                        <h2>Random Forest Classifier & Regressors</h2>
-                        <p>Trained on the NASA CAMS 2025 Meteor Dataset containing 4,733 high-precision atmospheric trajectory observations, 87 physical & orbital parameters, and verified IAU catalog annotations.</p>
+                        <h2>Random Forest Classifier & Multi-Target Regressors</h2>
+                        <p>Trained and validated on NASA CAMS 2025 meteor observation records. Features 100 decision trees, balanced class weights, and multi-parameter orbital physics extraction.</p>
+                        
                         <div class="hero-stats">
                             <div class="h-stat">
-                                <span class="num" id="ai-accuracy">91.97%</span>
+                                <span class="num numeric" id="ai-accuracy">91.97%</span>
                                 <span class="lbl">Test Accuracy</span>
                             </div>
                             <div class="h-stat">
-                                <span class="num" id="ai-f1">91.52%</span>
+                                <span class="num numeric" id="ai-f1">91.52%</span>
                                 <span class="lbl">Weighted F1-Score</span>
                             </div>
                             <div class="h-stat">
-                                <span class="num" id="ai-precision">91.44%</span>
+                                <span class="num numeric" id="ai-precision">91.44%</span>
                                 <span class="lbl">Weighted Precision</span>
                             </div>
                             <div class="h-stat">
-                                <span class="num" id="ai-recall">91.97%</span>
+                                <span class="num numeric" id="ai-recall">91.97%</span>
                                 <span class="lbl">Weighted Recall</span>
                             </div>
                         </div>
                     </div>
+
                     <div class="hero-right">
                         <div class="model-specs-box">
                             <h4>⚙️ Hyperparameters</h4>
                             <div class="spec-row"><span>Algorithm:</span> <strong>Random Forest</strong></div>
-                            <div class="spec-row"><span>Estimators:</span> <strong>100 Trees</strong></div>
-                            <div class="spec-row"><span>Max Depth:</span> <strong>12 Levels</strong></div>
-                            <div class="spec-row"><span>Train Split:</span> <strong>3,786 samples (80%)</strong></div>
-                            <div class="spec-row"><span>Test Split:</span> <strong>947 samples (20%)</strong></div>
+                            <div class="spec-row"><span>Estimators:</span> <strong class="numeric">100 Trees</strong></div>
+                            <div class="spec-row"><span>Max Depth:</span> <strong class="numeric">12 Levels</strong></div>
+                            <div class="spec-row"><span>Train Split:</span> <strong class="numeric">3,786 (80%)</strong></div>
+                            <div class="spec-row"><span>Test Split:</span> <strong class="numeric">947 (20%)</strong></div>
                             <div class="spec-row"><span>Class Weight:</span> <strong>Balanced</strong></div>
-                            <div class="spec-row"><span>Status:</span> <strong class="text-success">Validated & Active</strong></div>
+                            <div class="spec-row"><span>Engine Status:</span> <strong class="text-success">Validated & Active</strong></div>
                         </div>
                     </div>
                 </div>
 
                 <div class="model-grid-two">
                     <!-- Feature Importances -->
-                    <div class="card">
-                        <div class="card-header">
+                    <div class="dash-card-section">
+                        <div class="section-header-row">
                             <h3>🔍 Feature Importance Ranking</h3>
-                            <span class="card-badge">Gini Impurity</span>
+                            <span class="header-badge">Gini Impurity</span>
                         </div>
                         <div class="features-list" id="feature-importances-list">
                             <!-- Populated by JS -->
@@ -403,20 +504,20 @@
                     </div>
 
                     <!-- Per-Class Metrics -->
-                    <div class="card">
-                        <div class="card-header">
+                    <div class="dash-card-section">
+                        <div class="section-header-row">
                             <h3>📊 Per-Class Evaluation Metrics</h3>
-                            <span class="card-badge">Test Set Evaluation</span>
+                            <span class="header-badge">Test Set Evaluation</span>
                         </div>
                         <div class="table-responsive">
                             <table class="model-table">
                                 <thead>
                                     <tr>
-                                        <th>Activity Class</th>
+                                        <th>Activity Tier</th>
                                         <th>Precision</th>
                                         <th>Recall</th>
                                         <th>F1-Score</th>
-                                        <th>Test Support</th>
+                                        <th>Support</th>
                                     </tr>
                                 </thead>
                                 <tbody id="per-class-tbody">
@@ -428,10 +529,10 @@
                 </div>
 
                 <!-- Confusion Matrix -->
-                <div class="card full-width-card">
-                    <div class="card-header">
+                <div class="dash-card-full">
+                    <div class="section-header-row">
                         <h3>🔲 Confusion Matrix Analysis</h3>
-                        <span class="card-badge">Predicted vs Ground Truth</span>
+                        <span class="header-badge">Predicted vs Ground Truth</span>
                     </div>
                     <div class="matrix-container" id="matrix-container">
                         <!-- Populated by JS -->
@@ -440,14 +541,17 @@
             </div>
         </div>
 
-        <!-- VIEW 4: Predictor Lab View (Parameter Testing) -->
+        <!-- ===================================================================
+             VIEW 4: PREDICTOR LAB (CUSTOM INFERENCE LAB)
+             =================================================================== -->
         <div id="view-predict" class="view">
             <div class="predict-container">
-                <div class="card form-card">
-                    <div class="card-header">
+                <div class="form-card glass-panel">
+                    <div class="section-header-row">
                         <h3>🧪 Meteor Trajectory & Physical Predictor</h3>
-                        <p class="card-subtitle">Input custom orbital, radiant, and atmospheric trajectory parameters to run multi-target prediction models.</p>
+                        <span class="header-badge">MULTI-TARGET INFERENCE</span>
                     </div>
+                    <p class="card-subtitle">Input custom orbital elements, radiant vectors, and atmospheric entry properties to test model predictions.</p>
 
                     <div class="form-sections">
                         <div class="form-section">
@@ -455,27 +559,27 @@
                             <div class="form-grid">
                                 <div class="form-group">
                                     <label>Solar Longitude (°)</label>
-                                    <input type="number" id="f-sol-lon" value="283.4" step="0.1">
+                                    <input type="number" id="f-sol-lon" value="283.4" step="0.1" class="numeric">
                                 </div>
                                 <div class="form-group">
                                     <label>RA Geocentric (°)</label>
-                                    <input type="number" id="f-rageo" value="230.1" step="0.1">
+                                    <input type="number" id="f-rageo" value="230.1" step="0.1" class="numeric">
                                 </div>
                                 <div class="form-group">
                                     <label>DEC Geocentric (°)</label>
-                                    <input type="number" id="f-decgeo" value="49.5" step="0.1">
+                                    <input type="number" id="f-decgeo" value="49.5" step="0.1" class="numeric">
                                 </div>
                                 <div class="form-group">
                                     <label>Latitude Begin (°)</label>
-                                    <input type="number" id="f-latbeg" value="38.2" step="0.1">
+                                    <input type="number" id="f-latbeg" value="38.2" step="0.1" class="numeric">
                                 </div>
                                 <div class="form-group">
                                     <label>Longitude Begin (°)</label>
-                                    <input type="number" id="f-lonbeg" value="-122.4" step="0.1">
+                                    <input type="number" id="f-lonbeg" value="-122.4" step="0.1" class="numeric">
                                 </div>
                                 <div class="form-group">
                                     <label>Height Begin (km)</label>
-                                    <input type="number" id="f-htbeg" value="103.5" step="0.1">
+                                    <input type="number" id="f-htbeg" value="103.5" step="0.1" class="numeric">
                                 </div>
                             </div>
                         </div>
@@ -485,27 +589,27 @@
                             <div class="form-grid">
                                 <div class="form-group">
                                     <label>V Geocentric (km/s)</label>
-                                    <input type="number" id="f-vgeo" value="41.2" step="0.1">
+                                    <input type="number" id="f-vgeo" value="41.2" step="0.1" class="numeric">
                                 </div>
                                 <div class="form-group">
-                                    <label>Semi-major axis a (AU)</label>
-                                    <input type="number" id="f-a" value="3.12" step="0.1">
+                                    <label>Semi-Major Axis a (AU)</label>
+                                    <input type="number" id="f-a" value="3.12" step="0.1" class="numeric">
                                 </div>
                                 <div class="form-group">
                                     <label>Eccentricity e</label>
-                                    <input type="number" id="f-e" value="0.68" step="0.01" min="0" max="1">
+                                    <input type="number" id="f-e" value="0.68" step="0.01" min="0" max="1" class="numeric">
                                 </div>
                                 <div class="form-group">
                                     <label>Inclination i (°)</label>
-                                    <input type="number" id="f-i" value="71.4" step="0.1">
+                                    <input type="number" id="f-i" value="71.4" step="0.1" class="numeric">
                                 </div>
                                 <div class="form-group">
                                     <label>Perihelion Dist q (AU)</label>
-                                    <input type="number" id="f-q" value="0.98" step="0.01">
+                                    <input type="number" id="f-q" value="0.98" step="0.01" class="numeric">
                                 </div>
                                 <div class="form-group">
                                     <label>Tisserand Parameter (J)</label>
-                                    <input type="number" id="f-tiss" value="2.35" step="0.1">
+                                    <input type="number" id="f-tiss" value="2.35" step="0.1" class="numeric">
                                 </div>
                             </div>
                         </div>
@@ -515,24 +619,23 @@
                             <div class="form-grid">
                                 <div class="form-group">
                                     <label>Mass (kg)</label>
-                                    <input type="number" id="f-mass" value="0.0005" step="0.0001">
+                                    <input type="number" id="f-mass" value="0.0005" step="0.0001" class="numeric">
                                 </div>
                                 <div class="form-group">
                                     <label>Observed Duration (s)</label>
-                                    <input type="number" id="f-dur" value="0.54" step="0.05">
+                                    <input type="number" id="f-dur" value="0.54" step="0.05" class="numeric">
                                 </div>
                                 <div class="form-group">
                                     <label>Peak Magnitude</label>
-                                    <input type="number" id="f-peak" value="-0.3" step="0.1">
+                                    <input type="number" id="f-peak" value="-0.3" step="0.1" class="numeric">
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="form-actions">
+                    <div class="form-actions-row">
                         <button class="btn btn-secondary" id="btn-preset-qua">Quadrantids Preset</button>
                         <button class="btn btn-secondary" id="btn-preset-per">Perseids Preset</button>
-                        <button class="btn btn-secondary" id="btn-random">🎲 Random Sample</button>
                         <button class="btn btn-primary" id="btn-predict">
                             <span class="btn-spinner hidden" id="predict-spinner"></span>
                             🔍 Run Comprehensive Inference
@@ -540,54 +643,56 @@
                     </div>
                 </div>
 
-                <div class="predict-results" id="predict-results">
-                    <div class="card result-card">
-                        <h3>📊 Comprehensive Model Output</h3>
+                <div class="predict-results-panel">
+                    <div class="glass-panel result-panel">
+                        <div class="section-header-row">
+                            <h3>📊 Model Prediction Results</h3>
+                        </div>
                         <div class="result-placeholder" id="res-placeholder">
                             <div class="placeholder-icon">🔮</div>
-                            <p>Adjust parameters and click "Run Comprehensive Inference" to view Random Forest and Regressor predictions.</p>
+                            <p>Adjust parameters and click "Run Comprehensive Inference" to view model predictions.</p>
                         </div>
-                        <div class="result-content hidden" id="res-content">
-                            <!-- Populated dynamically -->
-                        </div>
+                        <div class="result-content hidden" id="res-content"></div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- VIEW 5: Data Explorer View -->
+        <!-- ===================================================================
+             VIEW 5: DATA EXPLORER
+             =================================================================== -->
         <div id="view-data" class="view">
             <div class="data-container">
-                <div class="card toolbar-card">
-                    <div class="toolbar">
-                        <div class="search-box">
-                            <input type="text" id="search-input" placeholder="🔍 Search by Trajectory ID or Shower name...">
+                <div class="toolbar-glass-card">
+                    <div class="toolbar-inner">
+                        <div class="search-wrap">
+                            <input type="text" id="search-input" placeholder="🔍 Search Trajectory ID or Shower...">
                         </div>
-                        <div class="filter-box">
-                            <select id="data-shower-filter">
+                        <div class="filter-wrap">
+                            <select id="data-shower-filter" class="hud-select-styled">
                                 <option value="">All Showers (4,733 records)</option>
                             </select>
                         </div>
                         <div class="pager-info">
-                            <span id="page-info">Showing 1-50 of 4,733</span>
+                            <span id="page-info" class="numeric">Showing 1-50 of 4,733</span>
                         </div>
-                        <div class="pager-controls">
+                        <div class="pager-buttons">
                             <button class="btn btn-small" id="btn-prev">← Prev</button>
-                            <span id="page-number">Page 1</span>
+                            <span id="page-number" class="numeric">Page 1</span>
                             <button class="btn btn-small" id="btn-next">Next →</button>
                         </div>
                     </div>
                 </div>
 
-                <div class="card table-card">
+                <div class="table-glass-card">
                     <div class="table-responsive">
                         <table class="data-table" id="meteor-table">
                             <thead>
                                 <tr>
                                     <th>Trajectory ID</th>
                                     <th>IAU Shower</th>
-                                    <th>Activity Tier</th>
-                                    <th>Solar Longitude</th>
+                                    <th>Activity</th>
+                                    <th>Solar Lon</th>
                                     <th>RA / DEC</th>
                                     <th>Vgeo (km/s)</th>
                                     <th>Peak Mag</th>
@@ -611,7 +716,7 @@
         <div class="modal-backdrop" data-close></div>
         <div class="modal-content">
             <button class="modal-close" data-close>✕</button>
-            <h3 id="modal-title">Meteor Trajectory Analysis</h3>
+            <h3 id="modal-title">Trajectory Telemetry Inspection</h3>
             <div id="modal-body"></div>
         </div>
     </div>
