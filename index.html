@@ -216,42 +216,74 @@
                 <main class="center-stage">
                     <div id="scene-container"></div>
 
-                    <!-- FLOATING BOTTOM CONTROL BAR -->
+                    <!-- FLOATING BOTTOM DYNAMICS CONTROL BAR -->
                     <div class="stage-bottom-controls">
                         <div class="controls-glass-bar">
                             <button class="stage-ctrl-btn play-btn" id="toggle-animation" title="Play / Pause Simulation">
                                 ⏸️ Pause
                             </button>
+
                             <div class="btn-divider"></div>
-                            <button class="stage-ctrl-btn" id="btn-zoom-in" title="Zoom In (+)">
-                                🔍+ Zoom In
+
+                            <!-- Earth Spin Controls -->
+                            <button class="stage-ctrl-btn" id="btn-reverse-spin-bottom" title="Reverse Earth Rotation Direction">
+                                ⇄ Spin
                             </button>
-                            <button class="stage-ctrl-btn" id="btn-zoom-out" title="Zoom Out (-)">
-                                🔍- Zoom Out
-                            </button>
-                            <button class="stage-ctrl-btn" id="btn-fit-screen" title="Fit Earth to Screen">
-                                ⛶ Fit Screen
-                            </button>
-                            <button class="stage-ctrl-btn" id="reset-camera" title="Reset Camera">
-                                🎯 Reset Camera
-                            </button>
+                            <div class="speed-slider-wrap">
+                                <span class="speed-label">EARTH SPIN:</span>
+                                <input type="range" id="earth-spin-slider-bottom" min="-3.0" max="3.0" step="0.2" value="1.0">
+                                <span class="speed-val numeric" id="earth-spin-val-bottom">1.0x</span>
+                            </div>
+
                             <div class="btn-divider"></div>
-                            <button class="stage-ctrl-btn active" id="toggle-clouds" title="Toggle Clouds">
-                                ☁️ Clouds
-                            </button>
-                            <button class="stage-ctrl-btn active" id="toggle-atmos" title="Toggle Atmospheric Glow">
-                                ✨ Atmosphere
-                            </button>
-                            <button class="stage-ctrl-btn active" id="toggle-meteors" title="Toggle Meteor Animation">
-                                ☄️ Meteors
-                            </button>
-                            <div class="btn-divider"></div>
-                            <!-- Speed Control -->
+
+                            <!-- Meteor Fall Direction Selector -->
+                            <div class="dir-select-wrap">
+                                <span class="speed-label">METEOR FALL DIR:</span>
+                                <select id="stream-dir-preset-bottom" class="hud-mini-select">
+                                    <option value="radiant" selected>Shower Radiant</option>
+                                    <option value="north">From Top (North)</option>
+                                    <option value="south">From Bottom (South)</option>
+                                    <option value="west">From Left (West)</option>
+                                    <option value="east">From Right (East)</option>
+                                    <option value="omni">All Around (360°)</option>
+                                </select>
+                            </div>
+
+                            <!-- Meteor Fall Speed -->
                             <div class="speed-slider-wrap">
                                 <span class="speed-label">SPEED:</span>
                                 <input type="range" id="speed-slider" min="0.2" max="4.0" step="0.2" value="1.0">
                                 <span class="speed-val numeric" id="speed-val">1.0x</span>
                             </div>
+
+                            <div class="btn-divider"></div>
+
+                            <!-- Zoom & Presets -->
+                            <button class="stage-ctrl-btn" id="btn-zoom-in" title="Zoom In (+)">
+                                🔍+
+                            </button>
+                            <button class="stage-ctrl-btn" id="btn-zoom-out" title="Zoom Out (-)">
+                                🔍-
+                            </button>
+                            <button class="stage-ctrl-btn" id="btn-fit-screen" title="Fit Earth to Screen">
+                                ⛶ Fit Earth
+                            </button>
+                            <button class="stage-ctrl-btn" id="reset-camera" title="Reset Camera">
+                                🎯 Reset
+                            </button>
+
+                            <div class="btn-divider"></div>
+
+                            <button class="stage-ctrl-btn active" id="toggle-clouds" title="Toggle Clouds">
+                                ☁️ Clouds
+                            </button>
+                            <button class="stage-ctrl-btn active" id="toggle-atmos" title="Toggle Atmospheric Glow">
+                                ✨ Atmos
+                            </button>
+                            <button class="stage-ctrl-btn active" id="toggle-meteors" title="Toggle Falling Meteors">
+                                ☄️ Meteors
+                            </button>
                         </div>
                     </div>
                 </main>

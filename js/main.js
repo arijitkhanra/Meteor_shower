@@ -16,9 +16,9 @@ const state = {
     speedMultiplier: 1.0,
     earthSpinRate: 1.0,               // Earth spin speed (-3.0x to +3.0x)
     earthSpinPaused: false,
-    streamDirectionMode: 'radiant',    // 'radiant', 'custom', 'north', 'south', 'equator', 'grazers', 'omni'
+    streamDirectionMode: 'radiant',    // 'radiant', 'north', 'south', 'west', 'east', 'custom', 'omni'
     customStreamAzimuth: 45,           // 0 to 360 degrees
-    densityLimit: 150,                // Meteor pool size: 80, 150, 260, 360
+    densityLimit: 120,                // Meteor pool size: 50, 80, 120, 200, 300
     showEarth: true,
     showClouds: true,
     showAtmos: true,
@@ -38,8 +38,8 @@ const state = {
 // THREE.JS SCENE GLOBALS & SMOOTH CAMERA TRANSITIONS
 // ==========================================================================
 let scene, camera, renderer, controls;
-let earthGroup, earthMesh, cloudsMesh, atmosMesh, nightLightsMesh;
-let starField, meteorGroup, trailGroup, impactGroup;
+let earthGroup, earthMesh, cloudsMesh, atmosMesh;
+let starField, meteorGroup, trailGroup;
 let raycaster, mouse;
 let clock = new THREE.Clock();
 let fpsFrames = 0, fpsTime = 0;
@@ -95,7 +95,6 @@ function getCatalogShower(code) {
     };
 }
 
-// Convert Azimuth Angle into Compass Heading String
 function getCompassHeading(deg) {
     const headings = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW', 'N'];
     const idx = Math.round((deg % 360) / 45);
@@ -169,7 +168,7 @@ function initThreeScene() {
     if (!container) return;
 
     scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x02040a, 0.010);
+    scene.fog = new THREE.FogExp2(0x02040a, 0.008);
 
     const width = container.clientWidth || (window.innerWidth * 0.58);
     const height = container.clientHeight || (window.innerHeight - 65);
@@ -200,32 +199,30 @@ function initThreeScene() {
     controls.target.set(0, 0, 0);
 
     // Natural Planetary Lighting
-    const ambientLight = new THREE.AmbientLight(0x1a2646, 1.4);
+    const ambientLight = new THREE.AmbientLight(0x223355, 1.8);
     scene.add(ambientLight);
 
     // Sun Directional Light (Illuminates day hemisphere with natural terminator)
-    const sunLight = new THREE.DirectionalLight(0xfff6ea, 3.0);
+    const sunLight = new THREE.DirectionalLight(0xfff8ee, 3.2);
     sunLight.position.set(16, 7, 12);
     scene.add(sunLight);
 
     // Soft Atmospheric Fill Light (Backlit spaceglow)
-    const rimLight = new THREE.DirectionalLight(0x00f0ff, 0.65);
+    const rimLight = new THREE.DirectionalLight(0x00d4e5, 0.7);
     rimLight.position.set(-14, -5, -8);
     scene.add(rimLight);
 
-    // Scene Groups
+    // Scene Groups: Earth and Falling Meteors only (No extra clutter/rings)
     earthGroup = new THREE.Group();
     meteorGroup = new THREE.Group();
     trailGroup = new THREE.Group();
-    impactGroup = new THREE.Group();
 
     scene.add(earthGroup);
     scene.add(meteorGroup);
     scene.add(trailGroup);
-    scene.add(impactGroup);
 
     // Build Astronomical Components
-    createStarfield();
+    createCleanStarfield();
     createNoiseFreeRealisticEarth();
 
     // Raycasting for interactive telemetry tooltips
@@ -237,7 +234,7 @@ function initThreeScene() {
 }
 
 // ==========================================================================
-// NOISE-FREE PHOTOREALISTIC 3D EARTH BUILDER
+// NOISE-FREE PHOTOREALISTIC 3D EARTH (CLEAR & CRISP, ZERO NOISE)
 // ==========================================================================
 function createNoiseFreeRealisticEarth() {
     const texLoader = new THREE.TextureLoader();
@@ -258,74 +255,33 @@ function createNoiseFreeRealisticEarth() {
     const earthMat = new THREE.MeshPhongMaterial({
         map: dayTex,
         normalMap: normalTex,
-        normalScale: new THREE.Vector2(0.75, 0.75),
+        normalScale: new THREE.Vector2(0.65, 0.65),
         specularMap: specularTex,
-        specular: new THREE.Color(0x336699),
-        shininess: 32
+        specular: new THREE.Color(0x285070),
+        shininess: 30
     });
 
     earthMesh = new THREE.Mesh(earthGeo, earthMat);
     earthGroup.add(earthMesh);
 
-    // 2. City Lights on Dark Hemisphere (Warm golden night-side glow)
-    const lightsTex = texLoader.load('assets/textures/earth_lights.png');
-    lightsTex.colorSpace = THREE.SRGBColorSpace;
-
-    const sunDirUniform = new THREE.Vector3(16, 7, 12).normalize();
-    const nightLightsMat = new THREE.ShaderMaterial({
-        uniforms: {
-            uNightTexture: { value: lightsTex },
-            uSunDirection: { value: sunDirUniform }
-        },
-        vertexShader: `
-            varying vec2 vUv;
-            varying vec3 vWorldNormal;
-            void main() {
-                vUv = uv;
-                vWorldNormal = normalize(mat3(modelMatrix) * normal);
-                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-            }
-        `,
-        fragmentShader: `
-            varying vec2 vUv;
-            varying vec3 vWorldNormal;
-            uniform vec3 uSunDirection;
-            uniform sampler2D uNightTexture;
-            void main() {
-                float sunDot = dot(vWorldNormal, uSunDirection);
-                // Reveal city lights on the unlit night side of Earth
-                float nightFactor = smoothstep(0.08, -0.18, sunDot);
-                vec4 cityTex = texture2D(uNightTexture, vUv);
-                vec3 cityGlow = cityTex.rgb * vec3(1.3, 1.05, 0.7) * nightFactor * 1.5;
-                gl_FragColor = vec4(cityGlow, nightFactor * (cityTex.r + cityTex.g * 0.5));
-            }
-        `,
-        transparent: true,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false
-    });
-
-    nightLightsMesh = new THREE.Mesh(new THREE.SphereGeometry(earthRadius * 1.0006, 64, 64), nightLightsMat);
-    earthGroup.add(nightLightsMesh);
-
-    // 3. Dynamic Swirling Clouds Layer (Photorealistic transparent clouds)
+    // 2. Realistic Soft Swirling Clouds Layer
     const cloudsTex = texLoader.load('assets/textures/earth_clouds_rgba.png');
     cloudsTex.colorSpace = THREE.SRGBColorSpace;
     cloudsTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
 
-    const cloudsGeo = new THREE.SphereGeometry(earthRadius * 1.016, 64, 64);
+    const cloudsGeo = new THREE.SphereGeometry(earthRadius * 1.015, 64, 64);
     const cloudsMat = new THREE.MeshPhongMaterial({
         map: cloudsTex,
         transparent: true,
-        opacity: 0.50,
+        opacity: 0.48,
         blending: THREE.NormalBlending,
         depthWrite: false
     });
     cloudsMesh = new THREE.Mesh(cloudsGeo, cloudsMat);
     earthGroup.add(cloudsMesh);
 
-    // 4. Rayleigh Atmospheric Scattering Glow Halo (Soft horizon rim glow)
-    const atmosGeo = new THREE.SphereGeometry(earthRadius * 1.040, 64, 64);
+    // 3. Rayleigh Atmospheric Scattering Glow Halo (Soft horizon rim glow)
+    const atmosGeo = new THREE.SphereGeometry(earthRadius * 1.038, 64, 64);
     const atmosMat = new THREE.ShaderMaterial({
         vertexShader: `
             varying vec3 vNormal;
@@ -337,8 +293,8 @@ function createNoiseFreeRealisticEarth() {
         fragmentShader: `
             varying vec3 vNormal;
             void main() {
-                float intensity = pow(0.68 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.0);
-                gl_FragColor = vec4(0.05, 0.72, 1.0, 1.0) * intensity * 0.95;
+                float intensity = pow(0.68 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.2);
+                gl_FragColor = vec4(0.05, 0.75, 1.0, 1.0) * intensity * 0.95;
             }
         `,
         blending: THREE.AdditiveBlending,
@@ -354,14 +310,14 @@ function createNoiseFreeRealisticEarth() {
 }
 
 // Deep Space Starfield (Pristine, soft, noise-free)
-function createStarfield() {
-    const starCount = 2600;
+function createCleanStarfield() {
+    const starCount = 2000;
     const geometry = new THREE.BufferGeometry();
     const positions = new Float32Array(starCount * 3);
     const colors = new Float32Array(starCount * 3);
 
     for (let i = 0; i < starCount * 3; i += 3) {
-        const radius = 60 + Math.random() * 90;
+        const radius = 65 + Math.random() * 85;
         const theta = Math.random() * Math.PI * 2;
         const phi = Math.acos((Math.random() * 2) - 1);
 
@@ -371,9 +327,9 @@ function createStarfield() {
 
         const tint = Math.random();
         if (tint > 0.8) {
-            colors[i] = 0.55; colors[i + 1] = 0.85; colors[i + 2] = 1.0;
+            colors[i] = 0.6; colors[i + 1] = 0.85; colors[i + 2] = 1.0;
         } else if (tint > 0.6) {
-            colors[i] = 1.0; colors[i + 1] = 0.88; colors[i + 2] = 0.6;
+            colors[i] = 1.0; colors[i + 1] = 0.88; colors[i + 2] = 0.65;
         } else {
             colors[i] = 0.95; colors[i + 1] = 0.95; colors[i + 2] = 1.0;
         }
@@ -383,10 +339,10 @@ function createStarfield() {
     geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
     const material = new THREE.PointsMaterial({
-        size: 0.16,
+        size: 0.15,
         vertexColors: true,
         transparent: true,
-        opacity: 0.82
+        opacity: 0.75
     });
 
     starField = new THREE.Points(geometry, material);
@@ -405,19 +361,8 @@ function radiantToDirectionVector(ra, dec) {
     return new THREE.Vector3(x, y, z).normalize();
 }
 
-function geoToVector3(lat, lon, altitude = earthRadius) {
-    const phi = (90 - lat) * (Math.PI / 180);
-    const theta = (lon + 180) * (Math.PI / 180);
-
-    const x = -(altitude * Math.sin(phi) * Math.cos(theta));
-    const z = (altitude * Math.sin(phi) * Math.sin(theta));
-    const y = (altitude * Math.cos(phi));
-
-    return new THREE.Vector3(x, y, z);
-}
-
 // ==========================================================================
-// REALISTIC FALLING METEORS SIMULATION (CONTROLLED TRAJECTORY & SPEED)
+// REALISTIC FALLING METEORS (ONLY METEORS FALLING DIRECTLY TOWARDS EARTH)
 // ==========================================================================
 class RealisticMeteor {
     constructor(data, isSporadic = false) {
@@ -425,22 +370,22 @@ class RealisticMeteor {
         this.isSporadic = isSporadic;
         this.active = false;
         this.progress = 0;
-        this.trailLength = 26;
+        this.trailLength = 22;
 
-        // Visual Head Particle
-        const size = Math.max(0.045, Math.min(0.095, (data.size || 0.05) * 1.2));
+        // Visual Head: bright luminous particle
+        const size = Math.max(0.045, Math.min(0.085, (data.size || 0.05) * 1.15));
         const headGeo = new THREE.SphereGeometry(size, 8, 8);
         const col = new THREE.Color(
-            data.color?.r ?? (isSporadic ? 1.0 : 0.0),
-            data.color?.g ?? (isSporadic ? 0.82 : 0.94),
-            data.color?.b ?? (isSporadic ? 0.35 : 1.0)
+            data.color?.r ?? (isSporadic ? 1.0 : 0.2),
+            data.color?.g ?? (isSporadic ? 0.85 : 0.95),
+            data.color?.b ?? (isSporadic ? 0.4 : 1.0)
         );
         this.baseColor = col;
         const headMat = new THREE.MeshBasicMaterial({ color: col });
         this.headMesh = new THREE.Mesh(headGeo, headMat);
         this.headMesh.userData = data;
 
-        // Glowing Ionization Trail Line
+        // Trail Line Geometry
         this.trailPositions = new Float32Array(this.trailLength * 3);
         this.trailColors = new Float32Array(this.trailLength * 3);
 
@@ -451,7 +396,7 @@ class RealisticMeteor {
         const trailMat = new THREE.LineBasicMaterial({
             vertexColors: true,
             transparent: true,
-            opacity: 0.92,
+            opacity: 0.95,
             blending: THREE.AdditiveBlending
         });
 
@@ -472,71 +417,59 @@ class RealisticMeteor {
 
         // Speed scaled to physical entry velocity (km/s)
         const velKmS = this.data.vgeo || 41.2;
-        this.speed = (0.012 + (velKmS / 72.0) * 0.018);
+        this.speed = (0.010 + (velKmS / 72.0) * 0.016);
 
-        // 1. Determine Incoming Stream Vector based on Mode
-        let incomingDir;
-        if (this.isSporadic) {
-            // Sporadic background meteors arrive from various angles
-            const randomTheta = Math.random() * Math.PI * 2;
-            const randomPhi = Math.acos((Math.random() * 2) - 1);
-            incomingDir = new THREE.Vector3(
-                Math.sin(randomPhi) * Math.cos(randomTheta),
-                Math.sin(randomPhi) * Math.sin(randomTheta),
-                Math.cos(randomPhi)
+        // 1. Determine Falling Direction Vector
+        let fallDir;
+        if (state.streamDirectionMode === 'north') {
+            fallDir = new THREE.Vector3(0.02, -1.0, 0.02).normalize();
+        } else if (state.streamDirectionMode === 'south') {
+            fallDir = new THREE.Vector3(0.02, 1.0, 0.02).normalize();
+        } else if (state.streamDirectionMode === 'west') {
+            fallDir = new THREE.Vector3(1.0, -0.35, 0.1).normalize();
+        } else if (state.streamDirectionMode === 'east') {
+            fallDir = new THREE.Vector3(-1.0, -0.35, 0.1).normalize();
+        } else if (state.streamDirectionMode === 'custom') {
+            const azRad = THREE.MathUtils.degToRad(state.customStreamAzimuth);
+            fallDir = new THREE.Vector3(-Math.sin(azRad), -0.75, -Math.cos(azRad)).normalize();
+        } else if (state.streamDirectionMode === 'omni' || this.isSporadic) {
+            // Plunge in towards Earth center from random celestial sphere point
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.acos((Math.random() * 2) - 1);
+            fallDir = new THREE.Vector3(
+                -Math.sin(phi) * Math.cos(theta),
+                -Math.sin(phi) * Math.sin(theta),
+                -Math.cos(phi)
             ).normalize();
         } else {
-            // Governed by Stream Direction Mode
-            if (state.streamDirectionMode === 'custom') {
-                const azRad = THREE.MathUtils.degToRad(state.customStreamAzimuth);
-                incomingDir = new THREE.Vector3(-Math.sin(azRad), -0.52, -Math.cos(azRad)).normalize();
-            } else if (state.streamDirectionMode === 'north') {
-                incomingDir = new THREE.Vector3(0.04, -1.0, 0.05).normalize();
-            } else if (state.streamDirectionMode === 'south') {
-                incomingDir = new THREE.Vector3(0.04, 1.0, 0.05).normalize();
-            } else if (state.streamDirectionMode === 'equator') {
-                incomingDir = new THREE.Vector3(-1.0, 0.05, 0.15).normalize();
-            } else if (state.streamDirectionMode === 'grazers') {
-                incomingDir = new THREE.Vector3(0.85, 0.18, -0.48).normalize();
-            } else if (state.streamDirectionMode === 'omni') {
-                const theta = Math.random() * Math.PI * 2;
-                const phi = Math.acos((Math.random() * 2) - 1);
-                incomingDir = new THREE.Vector3(
-                    -Math.sin(phi) * Math.cos(theta),
-                    -Math.sin(phi) * Math.sin(theta),
-                    -Math.cos(phi)
-                ).normalize();
-            } else {
-                // 'radiant' (Astronomical coordinates)
-                const rVector = radiantToDirectionVector(this.data.rageo || 230.1, this.data.decgeo || 49.5);
-                incomingDir = rVector.clone().negate().normalize();
-            }
+            // 'radiant' (Default IAU Astronomical coordinates)
+            const rVector = radiantToDirectionVector(this.data.rageo || 230.1, this.data.decgeo || 49.5);
+            fallDir = rVector.clone().negate().normalize();
         }
 
-        // 2. Build Orthonormal Coordinate Frame {p1, p2, incomingDir}
+        // 2. Build Coordinate Frame perpendicular to fall direction
         let ref = new THREE.Vector3(0, 1, 0);
-        if (Math.abs(incomingDir.dot(ref)) > 0.9) {
+        if (Math.abs(fallDir.dot(ref)) > 0.88) {
             ref.set(0, 0, 1);
         }
-        const p1 = new THREE.Vector3().crossVectors(incomingDir, ref).normalize();
-        const p2 = new THREE.Vector3().crossVectors(incomingDir, p1).normalize();
+        const p1 = new THREE.Vector3().crossVectors(fallDir, ref).normalize();
+        const p2 = new THREE.Vector3().crossVectors(fallDir, p1).normalize();
 
-        // 3. Falling Trajectory Geometry
-        const spreadAngle = Math.random() * Math.PI * 2;
-        // Impact parameter radius: mix of atmospheric penetrators and limb grazers
-        const rPerp = 0.25 + Math.random() * 2.8;
+        // 3. Aim directly at Earth's atmospheric disk
+        // Radius between 0.15 and 2.05 ensures every meteor hits Earth's atmosphere
+        const angle = Math.random() * Math.PI * 2;
+        const entryRadius = Math.sqrt(Math.random()) * 2.05;
+        const offset = new THREE.Vector3()
+            .addScaledVector(p1, Math.cos(angle) * entryRadius)
+            .addScaledVector(p2, Math.sin(angle) * entryRadius);
 
-        const spawnDist = 6.8 + Math.random() * 3.5;
-        const radialOffset = new THREE.Vector3()
-            .addScaledVector(p1, Math.cos(spreadAngle) * rPerp)
-            .addScaledVector(p2, Math.sin(spreadAngle) * rPerp);
+        // Impact point on Earth's upper atmosphere (radius 2.27)
+        const forwardDepth = Math.sqrt(Math.max(0.1, (earthRadius * 1.01) ** 2 - entryRadius ** 2));
+        this.endPos = offset.clone().addScaledVector(fallDir, forwardDepth);
 
-        // Path originates in deep space and plunges downward towards Earth
-        this.startPos = incomingDir.clone().multiplyScalar(-spawnDist).add(radialOffset);
-
-        // End position: plunged into or skimming past Earth's atmosphere
-        const totalTravelDist = spawnDist + 3.2;
-        this.endPos = this.startPos.clone().addScaledVector(incomingDir, totalTravelDist);
+        // Spawn position: high up in space along the falling trajectory
+        const fallDistance = 5.2 + Math.random() * 3.8;
+        this.startPos = this.endPos.clone().sub(fallDir.clone().multiplyScalar(fallDistance));
 
         this.currentPos.copy(this.startPos);
 
@@ -568,17 +501,14 @@ class RealisticMeteor {
         this.currentPos.lerpVectors(this.startPos, this.endPos, this.progress);
         this.headMesh.position.copy(this.currentPos);
 
-        // Atmospheric Entry & Ablation Heating
+        // Atmospheric ablation flare: flares brightly when entering upper atmosphere
         const distFromCenter = this.currentPos.length();
-
-        // When entering mesosphere / upper atmosphere (altitude 80-120 km)
-        if (distFromCenter < earthRadius * 1.16 && distFromCenter > earthRadius * 0.99) {
-            // Incandescent flare!
+        if (distFromCenter < earthRadius * 1.15 && distFromCenter > earthRadius * 0.99) {
             const flare = 1.0 + Math.sin(this.progress * Math.PI) * 2.2;
             this.headMesh.scale.set(flare, flare, flare);
-            this.headMesh.material.color.setRGB(1.0, 0.95, 0.85); // White-hot ablation core
+            this.headMesh.material.color.setRGB(1.0, 0.98, 0.9); // Brilliant white-hot core
         } else if (distFromCenter <= earthRadius * 0.99) {
-            // Terminal vaporization in atmosphere: extinguishes
+            // Vaporized in lower atmosphere
             this.active = false;
             this.headMesh.visible = false;
             this.trailLine.visible = false;
@@ -613,7 +543,7 @@ class RealisticMeteor {
     }
 }
 
-// Populate 3D Simulation with Dataset Trajectories & Sporadic Flux
+// Populate 3D Simulation with Dataset Trajectories
 async function load3DData(filter = state.activeStreamFilter) {
     try {
         const url = `/api/3d-data?limit=${state.densityLimit}${filter && filter !== 'ALL' ? `&shower=${filter}` : ''}`;
@@ -626,18 +556,11 @@ async function load3DData(filter = state.activeStreamFilter) {
         state.activeMeteors.forEach(m => m.destroy());
         state.activeMeteors = [];
 
-        while (impactGroup.children.length > 0) {
-            const obj = impactGroup.children[0];
-            impactGroup.remove(obj);
-            if (obj.geometry) obj.geometry.dispose();
-            if (obj.material) obj.material.dispose();
-        }
-
         const showerCatalogItem = getCatalogShower(filter);
 
-        // Synthesize pool: 80% stream meteors + 20% sporadic background meteors
+        // Synthesize pool of pure falling meteors
         const totalPool = state.densityLimit;
-        const sporadicCount = Math.floor(totalPool * 0.20);
+        const sporadicCount = Math.floor(totalPool * 0.15);
 
         for (let i = 0; i < totalPool; i++) {
             const isSporadic = i < sporadicCount;
@@ -659,25 +582,6 @@ async function load3DData(filter = state.activeStreamFilter) {
             state.activeMeteors.push(meteor);
         }
 
-        // Add Ground Triangulation Detection Rings on Earth
-        state.meteors3DData.slice(0, 30).forEach(m => {
-            if (m.lat_beg != null && m.lon_beg != null) {
-                const impactPos = geoToVector3(m.lat_beg, m.lon_beg, earthRadius * 1.008);
-                const ringGeo = new THREE.RingGeometry(0.015, 0.045, 16);
-                const ringMat = new THREE.MeshBasicMaterial({
-                    color: new THREE.Color(m.color?.r ?? 0, m.color?.g ?? 0.9, m.color?.b ?? 1),
-                    side: THREE.DoubleSide,
-                    transparent: true,
-                    opacity: 0.65
-                });
-                const ring = new THREE.Mesh(ringGeo, ringMat);
-                ring.position.copy(impactPos);
-                ring.lookAt(0, 0, 0);
-                ring.userData = m;
-                impactGroup.add(ring);
-            }
-        });
-
     } catch (e) {
         console.error('Error fetching 3D data:', e);
     }
@@ -688,7 +592,7 @@ function manageMeteorWaves(delta, effectiveSpeed) {
     if (!state.showMeteors) return;
 
     spawnTimer += delta * effectiveSpeed;
-    if (spawnTimer > 0.08) {
+    if (spawnTimer > 0.07) {
         spawnTimer = 0;
         const inactive = state.activeMeteors.filter(m => !m.active);
         const batchSize = Math.min(3, inactive.length);
@@ -962,7 +866,7 @@ function updateObservatoryPanel(showerCode) {
 }
 
 // ==========================================================================
-// EVENT LISTENERS & INTERACTIVE CONTROLS
+// EVENT LISTENERS & SYNCHRONIZED DYNAMICS CONTROLS
 // ==========================================================================
 async function loadInitialData() {
     try {
@@ -1022,60 +926,67 @@ function setupEventListeners() {
     });
 
     // ======================================================================
-    // EARTH SPIN & ROTATION CONTROLS
+    // EARTH SPIN & ROTATION CONTROLS (SYNCHRONIZED LEFT & BOTTOM)
     // ======================================================================
-    const earthSpinSlider = document.getElementById('earth-spin-slider');
-    const earthSpinVal = document.getElementById('earth-spin-val');
-    if (earthSpinSlider) {
-        earthSpinSlider.addEventListener('input', (e) => {
-            state.earthSpinRate = parseFloat(e.target.value);
-            state.earthSpinPaused = false;
-            updateSpinLabel();
-        });
+    const earthSpinSliderLeft = document.getElementById('earth-spin-slider');
+    const earthSpinSliderBottom = document.getElementById('earth-spin-slider-bottom');
+    const earthSpinValLeft = document.getElementById('earth-spin-val');
+    const earthSpinValBottom = document.getElementById('earth-spin-val-bottom');
+
+    function syncEarthSpin(val) {
+        state.earthSpinRate = parseFloat(val);
+        state.earthSpinPaused = false;
+        if (earthSpinSliderLeft) earthSpinSliderLeft.value = state.earthSpinRate;
+        if (earthSpinSliderBottom) earthSpinSliderBottom.value = state.earthSpinRate;
+        const dir = state.earthSpinRate > 0 ? 'Prograde' : (state.earthSpinRate < 0 ? 'Retrograde' : 'Still');
+        const formatted = `${Math.abs(state.earthSpinRate).toFixed(1)}x`;
+        if (earthSpinValLeft) earthSpinValLeft.textContent = `${formatted} ${dir}`;
+        if (earthSpinValBottom) earthSpinValBottom.textContent = formatted;
     }
 
-    document.getElementById('btn-reverse-spin')?.addEventListener('click', () => {
-        state.earthSpinRate = -state.earthSpinRate;
-        if (earthSpinSlider) earthSpinSlider.value = state.earthSpinRate;
-        updateSpinLabel();
-    });
+    earthSpinSliderLeft?.addEventListener('input', (e) => syncEarthSpin(e.target.value));
+    earthSpinSliderBottom?.addEventListener('input', (e) => syncEarthSpin(e.target.value));
+
+    function reverseEarthSpin() {
+        syncEarthSpin(-state.earthSpinRate);
+    }
+
+    document.getElementById('btn-reverse-spin')?.addEventListener('click', reverseEarthSpin);
+    document.getElementById('btn-reverse-spin-bottom')?.addEventListener('click', reverseEarthSpin);
 
     document.getElementById('btn-pause-spin')?.addEventListener('click', (e) => {
         state.earthSpinPaused = !state.earthSpinPaused;
         e.target.textContent = state.earthSpinPaused ? '▶ Resume Spin' : '⏸ Pause Spin';
-        if (earthSpinVal) {
-            earthSpinVal.textContent = state.earthSpinPaused ? 'Paused' : `${Math.abs(state.earthSpinRate).toFixed(1)}x`;
+        if (earthSpinValLeft) {
+            earthSpinValLeft.textContent = state.earthSpinPaused ? 'Paused' : `${Math.abs(state.earthSpinRate).toFixed(1)}x`;
         }
     });
 
-    function updateSpinLabel() {
-        if (!earthSpinVal) return;
-        const dir = state.earthSpinRate > 0 ? 'Prograde' : (state.earthSpinRate < 0 ? 'Retrograde' : 'Still');
-        earthSpinVal.textContent = `${Math.abs(state.earthSpinRate).toFixed(1)}x ${dir}`;
+    // ======================================================================
+    // METEOR FALL DIRECTION & INTENSITY CONTROLS (SYNCHRONIZED)
+    // ======================================================================
+    const streamDirPresetLeft = document.getElementById('stream-dir-preset');
+    const streamDirPresetBottom = document.getElementById('stream-dir-preset-bottom');
+
+    function syncStreamDir(mode) {
+        state.streamDirectionMode = mode;
+        if (streamDirPresetLeft) streamDirPresetLeft.value = mode;
+        if (streamDirPresetBottom) streamDirPresetBottom.value = mode;
+        realignMeteorTrajectories();
     }
 
-    // ======================================================================
-    // METEOR FALL DIRECTION & INTENSITY CONTROLS
-    // ======================================================================
-    const streamDirPreset = document.getElementById('stream-dir-preset');
-    if (streamDirPreset) {
-        streamDirPreset.addEventListener('change', (e) => {
-            state.streamDirectionMode = e.target.value;
-            realignMeteorTrajectories();
-        });
-    }
+    streamDirPresetLeft?.addEventListener('change', (e) => syncStreamDir(e.target.value));
+    streamDirPresetBottom?.addEventListener('change', (e) => syncStreamDir(e.target.value));
 
     const streamAngleSlider = document.getElementById('stream-angle-slider');
     const streamAngleVal = document.getElementById('stream-angle-val');
     if (streamAngleSlider) {
         streamAngleSlider.addEventListener('input', (e) => {
             state.customStreamAzimuth = parseFloat(e.target.value);
-            state.streamDirectionMode = 'custom';
-            if (streamDirPreset) streamDirPreset.value = 'custom';
+            syncStreamDir('custom');
             if (streamAngleVal) {
                 streamAngleVal.textContent = `${state.customStreamAzimuth}° ${getCompassHeading(state.customStreamAzimuth)}`;
             }
-            realignMeteorTrajectories();
         });
     }
 
@@ -1210,7 +1121,7 @@ function onMouseMove(event) {
     mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
     raycaster.setFromCamera(mouse, camera);
-    const intersects = raycaster.intersectObjects([...meteorGroup.children, ...impactGroup.children]);
+    const intersects = raycaster.intersectObjects(meteorGroup.children);
 
     const tooltip = document.getElementById('meteor-tooltip');
     if (intersects.length > 0) {

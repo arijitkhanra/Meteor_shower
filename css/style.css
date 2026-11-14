@@ -663,7 +663,29 @@ body {
 .speed-val {
     font-size: 0.72rem;
     color: var(--accent);
-    width: 30px;
+    width: 32px;
+}
+
+.dir-select-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.hud-mini-select {
+    background: rgba(6, 11, 24, 0.95);
+    border: 1px solid var(--border-subtle);
+    color: #ffffff;
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    padding: 3px 6px;
+    border-radius: 12px;
+    outline: none;
+    cursor: pointer;
+}
+
+.hud-mini-select:focus {
+    border-color: var(--accent);
 }
 
 /* ==========================================================================
