@@ -453,6 +453,69 @@ body {
     font-weight: 500;
 }
 
+.control-subcard {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: var(--radius-sm);
+    padding: 10px;
+    margin-bottom: 12px;
+}
+
+.slider-control-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 8px 0;
+}
+
+.ctrl-sub-tag {
+    font-size: 0.65rem;
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+    min-width: 60px;
+}
+
+.slider-control-row input[type="range"] {
+    flex: 1;
+    accent-color: var(--accent);
+    cursor: pointer;
+    height: 4px;
+}
+
+.spin-badge, .angle-badge {
+    font-size: 0.72rem;
+    color: var(--accent);
+    min-width: 58px;
+    text-align: right;
+    font-weight: 600;
+}
+
+.hud-btn-pair {
+    display: flex;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.hud-action-btn {
+    flex: 1;
+    background: rgba(0, 212, 229, 0.06);
+    border: 1px solid rgba(0, 212, 229, 0.2);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    padding: 6px 8px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+}
+
+.hud-action-btn:hover {
+    background: rgba(0, 212, 229, 0.16);
+    border-color: var(--accent);
+    color: #ffffff;
+}
+
 .camera-mode-section {
     margin-top: 4px;
 }

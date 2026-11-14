@@ -145,6 +145,55 @@
                             </div>
                         </div>
 
+                        <!-- Earth Rotation & Dynamics -->
+                        <div class="control-subcard">
+                            <span class="sub-label">EARTH ROTATION & SPIN</span>
+                            <div class="slider-control-row">
+                                <span class="ctrl-sub-tag">SPIN:</span>
+                                <input type="range" id="earth-spin-slider" min="-3.0" max="3.0" step="0.2" value="1.0">
+                                <span id="earth-spin-val" class="numeric spin-badge">1.0x</span>
+                            </div>
+                            <div class="hud-btn-pair">
+                                <button class="hud-action-btn" id="btn-reverse-spin" title="Reverse Earth Rotation Direction">
+                                    ⇄ Reverse Spin
+                                </button>
+                                <button class="hud-action-btn" id="btn-pause-spin" title="Toggle Earth Spin">
+                                    ⏸ Pause Spin
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Meteor Stream Trajectory Direction & Dynamics -->
+                        <div class="control-subcard">
+                            <span class="sub-label">METEOR FALL DIRECTION & RATE</span>
+                            <div class="form-group-compact">
+                                <label for="stream-dir-preset">Stream Trajectory Mode:</label>
+                                <select id="stream-dir-preset" class="hud-select-styled">
+                                    <option value="radiant" selected>Radiant Aligned (IAU Stream)</option>
+                                    <option value="custom">Custom Angle (Use Slider)</option>
+                                    <option value="north">North Polar Drop (Descending)</option>
+                                    <option value="south">South Polar Drop (Ascending)</option>
+                                    <option value="equator">Equatorial Lateral Sweep</option>
+                                    <option value="grazers">Tangential Limb Grazers</option>
+                                    <option value="omni">Omnidirectional 360° Plunge</option>
+                                </select>
+                            </div>
+                            <div class="slider-control-row">
+                                <span class="ctrl-sub-tag">FALL ANGLE:</span>
+                                <input type="range" id="stream-angle-slider" min="0" max="360" step="5" value="45">
+                                <span id="stream-angle-val" class="numeric angle-badge">45° NE</span>
+                            </div>
+                            <div class="form-group-compact" style="margin-top: 6px;">
+                                <label for="stream-density-select">Meteor Intensity:</label>
+                                <select id="stream-density-select" class="hud-select-styled">
+                                    <option value="80">Gentle Shower (80 Meteors)</option>
+                                    <option value="150" selected>Standard Flux (150 Meteors)</option>
+                                    <option value="260">Intense Meteor Storm (260 Meteors)</option>
+                                    <option value="360">Major Fireball Outburst (360 Meteors)</option>
+                                </select>
+                            </div>
+                        </div>
+
                         <!-- Earth Visualization Modes -->
                         <div class="camera-mode-section">
                             <span class="sub-label">VISUALIZATION MODE</span>
