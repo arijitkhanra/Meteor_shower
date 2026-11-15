@@ -18,7 +18,7 @@ const state = {
     earthSpinPaused: false,
     streamDirectionMode: 'radiant',    // 'radiant', 'north', 'south', 'west', 'east', 'custom', 'omni'
     customStreamAzimuth: 45,           // 0 to 360 degrees
-    densityLimit: 120,                // Meteor pool size: 50, 80, 120, 200, 300
+    densityLimit: 25,                 // Number of shooting stars in circulation
     showEarth: true,
     showClouds: true,
     showAtmos: true,
@@ -39,7 +39,7 @@ const state = {
 // ==========================================================================
 let scene, camera, renderer, controls;
 let earthGroup, earthMesh, cloudsMesh, atmosMesh;
-let starField, meteorGroup, trailGroup;
+let starField, meteorGroup;
 let raycaster, mouse;
 let clock = new THREE.Clock();
 let fpsFrames = 0, fpsTime = 0;
@@ -168,7 +168,7 @@ function initThreeScene() {
     if (!container) return;
 
     scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x02040a, 0.008);
+    scene.fog = new THREE.FogExp2(0x02040a, 0.006);
 
     const width = container.clientWidth || (window.innerWidth * 0.58);
     const height = container.clientHeight || (window.innerHeight - 65);
@@ -185,41 +185,39 @@ function initThreeScene() {
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.25;
+    renderer.toneMappingExposure = 1.35; // Bright, vivid, crisp illumination
     container.appendChild(renderer.domElement);
 
     // Orbit Controls with Smooth Damping and Safe Zoom Limits
     controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
-    controls.minDistance = 2.75;  // Earth radius is 2.25: permits surface close-ups without clipping inside
-    controls.maxDistance = 15.0;  // Deep space view
+    controls.minDistance = 2.75;
+    controls.maxDistance = 15.0;
     controls.zoomSpeed = 1.0;
     controls.rotateSpeed = 0.8;
     controls.target.set(0, 0, 0);
 
-    // Natural Planetary Lighting
-    const ambientLight = new THREE.AmbientLight(0x223355, 1.8);
+    // NATURAL PLANETARY LIGHTING (BRIGHT & CLEAR SO EARTH IS FULLY VISIBLE)
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.95);
     scene.add(ambientLight);
 
-    // Sun Directional Light (Illuminates day hemisphere with natural terminator)
-    const sunLight = new THREE.DirectionalLight(0xfff8ee, 3.2);
-    sunLight.position.set(16, 7, 12);
+    // Main Sun Directional Light (Illuminates continents and oceans directly)
+    const sunLight = new THREE.DirectionalLight(0xffffff, 2.5);
+    sunLight.position.set(6, 8, 12);
     scene.add(sunLight);
 
-    // Soft Atmospheric Fill Light (Backlit spaceglow)
-    const rimLight = new THREE.DirectionalLight(0x00d4e5, 0.7);
-    rimLight.position.set(-14, -5, -8);
+    // Soft Atmospheric Rim Backlight
+    const rimLight = new THREE.DirectionalLight(0x38bdf8, 0.7);
+    rimLight.position.set(-10, -5, -8);
     scene.add(rimLight);
 
-    // Scene Groups: Earth and Falling Meteors only (No extra clutter/rings)
+    // Scene Groups: Earth and Falling Shooting Stars only (NO extra clutter/rings)
     earthGroup = new THREE.Group();
     meteorGroup = new THREE.Group();
-    trailGroup = new THREE.Group();
 
     scene.add(earthGroup);
     scene.add(meteorGroup);
-    scene.add(trailGroup);
 
     // Build Astronomical Components
     createCleanStarfield();
@@ -234,12 +232,12 @@ function initThreeScene() {
 }
 
 // ==========================================================================
-// NOISE-FREE PHOTOREALISTIC 3D EARTH (CLEAR & CRISP, ZERO NOISE)
+// NOISE-FREE PHOTOREALISTIC 3D EARTH (CLEAR & CRISP, VIBRANT NASA TEXTURES)
 // ==========================================================================
 function createNoiseFreeRealisticEarth() {
     const texLoader = new THREE.TextureLoader();
 
-    // Load High-Resolution NASA Satellite Textures
+    // High-Resolution NASA Satellite Blue Marble Textures
     const dayTex = texLoader.load('assets/textures/earth_day.jpg');
     dayTex.colorSpace = THREE.SRGBColorSpace;
     dayTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
@@ -255,25 +253,25 @@ function createNoiseFreeRealisticEarth() {
     const earthMat = new THREE.MeshPhongMaterial({
         map: dayTex,
         normalMap: normalTex,
-        normalScale: new THREE.Vector2(0.65, 0.65),
+        normalScale: new THREE.Vector2(0.55, 0.55),
         specularMap: specularTex,
-        specular: new THREE.Color(0x285070),
-        shininess: 30
+        specular: new THREE.Color(0x334455),
+        shininess: 20
     });
 
     earthMesh = new THREE.Mesh(earthGeo, earthMat);
     earthGroup.add(earthMesh);
 
-    // 2. Realistic Soft Swirling Clouds Layer
+    // 2. Realistic Soft Swirling Clouds Layer (True-alpha transparency)
     const cloudsTex = texLoader.load('assets/textures/earth_clouds_rgba.png');
     cloudsTex.colorSpace = THREE.SRGBColorSpace;
     cloudsTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
 
-    const cloudsGeo = new THREE.SphereGeometry(earthRadius * 1.015, 64, 64);
+    const cloudsGeo = new THREE.SphereGeometry(earthRadius * 1.014, 64, 64);
     const cloudsMat = new THREE.MeshPhongMaterial({
         map: cloudsTex,
         transparent: true,
-        opacity: 0.48,
+        opacity: 0.44,
         blending: THREE.NormalBlending,
         depthWrite: false
     });
@@ -281,7 +279,7 @@ function createNoiseFreeRealisticEarth() {
     earthGroup.add(cloudsMesh);
 
     // 3. Rayleigh Atmospheric Scattering Glow Halo (Soft horizon rim glow)
-    const atmosGeo = new THREE.SphereGeometry(earthRadius * 1.038, 64, 64);
+    const atmosGeo = new THREE.SphereGeometry(earthRadius * 1.036, 64, 64);
     const atmosMat = new THREE.ShaderMaterial({
         vertexShader: `
             varying vec3 vNormal;
@@ -293,8 +291,8 @@ function createNoiseFreeRealisticEarth() {
         fragmentShader: `
             varying vec3 vNormal;
             void main() {
-                float intensity = pow(0.68 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.2);
-                gl_FragColor = vec4(0.05, 0.75, 1.0, 1.0) * intensity * 0.95;
+                float intensity = pow(0.66 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.2);
+                gl_FragColor = vec4(0.08, 0.75, 1.0, 1.0) * intensity * 0.90;
             }
         `,
         blending: THREE.AdditiveBlending,
@@ -311,7 +309,7 @@ function createNoiseFreeRealisticEarth() {
 
 // Deep Space Starfield (Pristine, soft, noise-free)
 function createCleanStarfield() {
-    const starCount = 2000;
+    const starCount = 1800;
     const geometry = new THREE.BufferGeometry();
     const positions = new Float32Array(starCount * 3);
     const colors = new Float32Array(starCount * 3);
@@ -339,10 +337,10 @@ function createCleanStarfield() {
     geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
     const material = new THREE.PointsMaterial({
-        size: 0.15,
+        size: 0.14,
         vertexColors: true,
         transparent: true,
-        opacity: 0.75
+        opacity: 0.70
     });
 
     starField = new THREE.Points(geometry, material);
@@ -361,126 +359,150 @@ function radiantToDirectionVector(ra, dec) {
     return new THREE.Vector3(x, y, z).normalize();
 }
 
+// Generate Smooth Gradient Texture for 3D Meteor Streak Flame
+let cachedMeteorTextures = {};
+function getMeteorStreakTexture(colorHex = '#00f0ff') {
+    if (cachedMeteorTextures[colorHex]) return cachedMeteorTextures[colorHex];
+
+    const canvas = document.createElement('canvas');
+    canvas.width = 32;
+    canvas.height = 128;
+    const ctx = canvas.getContext('2d');
+
+    const grad = ctx.createLinearGradient(0, 0, 0, 128);
+    grad.addColorStop(0.0, '#ffffff'); // Blazing white-hot incandescent head
+    grad.addColorStop(0.18, colorHex); // Radiant shower hue
+    grad.addColorStop(0.65, colorHex);
+    grad.addColorStop(1.0, 'rgba(0, 0, 0, 0)'); // Smooth fade to transparency at tail tip
+
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 32, 128);
+
+    const tex = new THREE.CanvasTexture(canvas);
+    cachedMeteorTextures[colorHex] = tex;
+    return tex;
+}
+
 // ==========================================================================
-// REALISTIC FALLING METEORS (ONLY METEORS FALLING DIRECTLY TOWARDS EARTH)
+// REALISTIC FALLING SHOOTING STARS (ONLY METEORS FALLING DIRECTLY ONTO EARTH)
 // ==========================================================================
-class RealisticMeteor {
-    constructor(data, isSporadic = false) {
+class FallingShootingStar {
+    constructor(data, colorHex = '#00f0ff') {
         this.data = data;
-        this.isSporadic = isSporadic;
+        this.colorHex = colorHex;
+        this.group = new THREE.Group();
         this.active = false;
         this.progress = 0;
-        this.trailLength = 22;
+        this.speed = 0.015;
 
-        // Visual Head: bright luminous particle
-        const size = Math.max(0.045, Math.min(0.085, (data.size || 0.05) * 1.15));
-        const headGeo = new THREE.SphereGeometry(size, 8, 8);
-        const col = new THREE.Color(
-            data.color?.r ?? (isSporadic ? 1.0 : 0.2),
-            data.color?.g ?? (isSporadic ? 0.85 : 0.95),
-            data.color?.b ?? (isSporadic ? 0.4 : 1.0)
-        );
-        this.baseColor = col;
-        const headMat = new THREE.MeshBasicMaterial({ color: col });
+        // 1. Incandescent White-Hot Head Particle
+        const headGeo = new THREE.SphereGeometry(0.042, 10, 10);
+        const headMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
         this.headMesh = new THREE.Mesh(headGeo, headMat);
-        this.headMesh.userData = data;
+        this.group.add(this.headMesh);
 
-        // Trail Line Geometry
-        this.trailPositions = new Float32Array(this.trailLength * 3);
-        this.trailColors = new Float32Array(this.trailLength * 3);
+        // 2. Soft Colored Aura Glow
+        const auraGeo = new THREE.SphereGeometry(0.075, 10, 10);
+        const auraMat = new THREE.MeshBasicMaterial({
+            color: new THREE.Color(colorHex),
+            transparent: true,
+            opacity: 0.70,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        });
+        this.auraMesh = new THREE.Mesh(auraGeo, auraMat);
+        this.group.add(this.auraMesh);
 
-        const trailGeo = new THREE.BufferGeometry();
-        trailGeo.setAttribute('position', new THREE.BufferAttribute(this.trailPositions, 3));
-        trailGeo.setAttribute('color', new THREE.BufferAttribute(this.trailColors, 3));
+        // 3. 3D Tapered Flame Streak Tail (Visibly 3D from all angles)
+        const tailLength = 1.15;
+        const tailGeo = new THREE.ConeGeometry(0.05, tailLength, 10, 1, true);
+        tailGeo.rotateX(-Math.PI / 2);
+        tailGeo.translate(0, 0, -tailLength / 2);
 
-        const trailMat = new THREE.LineBasicMaterial({
-            vertexColors: true,
+        const tailTex = getMeteorStreakTexture(colorHex);
+        const tailMat = new THREE.MeshBasicMaterial({
+            map: tailTex,
             transparent: true,
             opacity: 0.95,
-            blending: THREE.AdditiveBlending
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+            side: THREE.DoubleSide
         });
 
-        this.trailLine = new THREE.Line(trailGeo, trailMat);
+        this.tailMesh = new THREE.Mesh(tailGeo, tailMat);
+        this.group.add(this.tailMesh);
 
-        meteorGroup.add(this.headMesh);
-        trailGroup.add(this.trailLine);
+        meteorGroup.add(this.group);
 
+        this.startPos = new THREE.Vector3();
+        this.endPos = new THREE.Vector3();
         this.currentPos = new THREE.Vector3();
-        this.history = [];
+        this.fallDir = new THREE.Vector3();
+
         this.reset();
     }
 
     reset() {
         this.progress = 0;
         this.active = true;
-        this.history = [];
+        this.group.visible = state.showMeteors;
 
-        // Speed scaled to physical entry velocity (km/s)
-        const velKmS = this.data.vgeo || 41.2;
-        this.speed = (0.010 + (velKmS / 72.0) * 0.016);
-
-        // 1. Determine Falling Direction Vector
-        let fallDir;
+        // 1. Determine Incoming Fall Direction
         if (state.streamDirectionMode === 'north') {
-            fallDir = new THREE.Vector3(0.02, -1.0, 0.02).normalize();
+            this.fallDir.set(0.02, -1.0, 0.02).normalize();
         } else if (state.streamDirectionMode === 'south') {
-            fallDir = new THREE.Vector3(0.02, 1.0, 0.02).normalize();
+            this.fallDir.set(0.02, 1.0, 0.02).normalize();
         } else if (state.streamDirectionMode === 'west') {
-            fallDir = new THREE.Vector3(1.0, -0.35, 0.1).normalize();
+            this.fallDir.set(1.0, -0.30, 0.05).normalize();
         } else if (state.streamDirectionMode === 'east') {
-            fallDir = new THREE.Vector3(-1.0, -0.35, 0.1).normalize();
+            this.fallDir.set(-1.0, -0.30, 0.05).normalize();
         } else if (state.streamDirectionMode === 'custom') {
             const azRad = THREE.MathUtils.degToRad(state.customStreamAzimuth);
-            fallDir = new THREE.Vector3(-Math.sin(azRad), -0.75, -Math.cos(azRad)).normalize();
-        } else if (state.streamDirectionMode === 'omni' || this.isSporadic) {
-            // Plunge in towards Earth center from random celestial sphere point
+            this.fallDir.set(-Math.sin(azRad), -0.72, -Math.cos(azRad)).normalize();
+        } else if (state.streamDirectionMode === 'omni') {
             const theta = Math.random() * Math.PI * 2;
             const phi = Math.acos((Math.random() * 2) - 1);
-            fallDir = new THREE.Vector3(
-                -Math.sin(phi) * Math.cos(theta),
-                -Math.sin(phi) * Math.sin(theta),
-                -Math.cos(phi)
-            ).normalize();
+            this.fallDir.set(-Math.sin(phi) * Math.cos(theta), -Math.sin(phi) * Math.sin(theta), -Math.cos(phi)).normalize();
         } else {
             // 'radiant' (Default IAU Astronomical coordinates)
-            const rVector = radiantToDirectionVector(this.data.rageo || 230.1, this.data.decgeo || 49.5);
-            fallDir = rVector.clone().negate().normalize();
+            const s = getCatalogShower(state.activeStreamFilter);
+            const rVector = radiantToDirectionVector(s.ra, s.dec);
+            this.fallDir.copy(rVector).negate().normalize();
         }
+
+        // Speed scaled to fast shooting star velocity
+        const velKmS = this.data.vgeo || 41.2;
+        this.speed = (0.012 + (velKmS / 72.0) * 0.016);
 
         // 2. Build Coordinate Frame perpendicular to fall direction
         let ref = new THREE.Vector3(0, 1, 0);
-        if (Math.abs(fallDir.dot(ref)) > 0.88) {
+        if (Math.abs(this.fallDir.dot(ref)) > 0.88) {
             ref.set(0, 0, 1);
         }
-        const p1 = new THREE.Vector3().crossVectors(fallDir, ref).normalize();
-        const p2 = new THREE.Vector3().crossVectors(fallDir, p1).normalize();
+        const p1 = new THREE.Vector3().crossVectors(this.fallDir, ref).normalize();
+        const p2 = new THREE.Vector3().crossVectors(this.fallDir, p1).normalize();
 
-        // 3. Aim directly at Earth's atmospheric disk
-        // Radius between 0.15 and 2.05 ensures every meteor hits Earth's atmosphere
+        // 3. Atmospheric entry target on Earth's atmosphere disk (radius <= 1.95)
+        // Guarantees every single meteor hits Earth's atmospheric envelope!
         const angle = Math.random() * Math.PI * 2;
-        const entryRadius = Math.sqrt(Math.random()) * 2.05;
+        const entryRadius = Math.sqrt(Math.random()) * 1.95;
         const offset = new THREE.Vector3()
             .addScaledVector(p1, Math.cos(angle) * entryRadius)
             .addScaledVector(p2, Math.sin(angle) * entryRadius);
 
         // Impact point on Earth's upper atmosphere (radius 2.27)
         const forwardDepth = Math.sqrt(Math.max(0.1, (earthRadius * 1.01) ** 2 - entryRadius ** 2));
-        this.endPos = offset.clone().addScaledVector(fallDir, forwardDepth);
+        this.endPos.copy(offset).addScaledVector(this.fallDir, forwardDepth);
 
         // Spawn position: high up in space along the falling trajectory
-        const fallDistance = 5.2 + Math.random() * 3.8;
-        this.startPos = this.endPos.clone().sub(fallDir.clone().multiplyScalar(fallDistance));
+        const fallDist = 4.8 + Math.random() * 3.6;
+        this.startPos.copy(this.endPos).sub(this.fallDir.clone().multiplyScalar(fallDist));
 
         this.currentPos.copy(this.startPos);
+        this.group.position.copy(this.currentPos);
 
-        // Initialize trail gradient
-        for (let i = 0; i < this.trailLength * 3; i += 3) {
-            const ratio = 1 - (i / (this.trailLength * 3));
-            this.trailColors[i] = this.baseColor.r * ratio;
-            this.trailColors[i + 1] = this.baseColor.g * ratio;
-            this.trailColors[i + 2] = this.baseColor.b * ratio;
-        }
-        this.trailLine.geometry.attributes.color.needsUpdate = true;
+        // Orient meteor streak along velocity direction
+        this.group.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), this.fallDir);
     }
 
     update(effectiveSpeed) {
@@ -490,56 +512,40 @@ class RealisticMeteor {
 
         if (this.progress >= 1.0) {
             this.active = false;
-            this.headMesh.visible = false;
-            this.trailLine.visible = false;
+            this.group.visible = false;
             return;
         }
 
-        this.headMesh.visible = state.showMeteors;
-        this.trailLine.visible = state.showMeteors;
+        this.group.visible = state.showMeteors;
 
         this.currentPos.lerpVectors(this.startPos, this.endPos, this.progress);
-        this.headMesh.position.copy(this.currentPos);
+        this.group.position.copy(this.currentPos);
 
-        // Atmospheric ablation flare: flares brightly when entering upper atmosphere
+        // Atmospheric Entry & Ablation Heating Flare
         const distFromCenter = this.currentPos.length();
         if (distFromCenter < earthRadius * 1.15 && distFromCenter > earthRadius * 0.99) {
-            const flare = 1.0 + Math.sin(this.progress * Math.PI) * 2.2;
+            // Incandescent atmospheric entry flare
+            const flare = 1.0 + Math.sin(this.progress * Math.PI) * 1.8;
             this.headMesh.scale.set(flare, flare, flare);
-            this.headMesh.material.color.setRGB(1.0, 0.98, 0.9); // Brilliant white-hot core
+            this.auraMesh.scale.set(flare * 1.25, flare * 1.25, flare * 1.25);
         } else if (distFromCenter <= earthRadius * 0.99) {
-            // Vaporized in lower atmosphere
+            // Mesopause terminal burnup: vaporize & vanish
             this.active = false;
-            this.headMesh.visible = false;
-            this.trailLine.visible = false;
-            return;
+            this.group.visible = false;
         } else {
             this.headMesh.scale.set(1.0, 1.0, 1.0);
-            this.headMesh.material.color.copy(this.baseColor);
+            this.auraMesh.scale.set(1.0, 1.0, 1.0);
         }
-
-        this.history.unshift(this.currentPos.clone());
-        if (this.history.length > this.trailLength) {
-            this.history.pop();
-        }
-
-        const posAttr = this.trailLine.geometry.attributes.position;
-        for (let i = 0; i < this.history.length; i++) {
-            posAttr.setXYZ(i, this.history[i].x, this.history[i].y, this.history[i].z);
-        }
-        for (let i = this.history.length; i < this.trailLength; i++) {
-            posAttr.setXYZ(i, this.currentPos.x, this.currentPos.y, this.currentPos.z);
-        }
-        posAttr.needsUpdate = true;
     }
 
     destroy() {
-        meteorGroup.remove(this.headMesh);
-        trailGroup.remove(this.trailLine);
+        meteorGroup.remove(this.group);
         this.headMesh.geometry.dispose();
         this.headMesh.material.dispose();
-        this.trailLine.geometry.dispose();
-        this.trailLine.material.dispose();
+        this.auraMesh.geometry.dispose();
+        this.auraMesh.material.dispose();
+        this.tailMesh.geometry.dispose();
+        this.tailMesh.material.dispose();
     }
 }
 
@@ -558,12 +564,9 @@ async function load3DData(filter = state.activeStreamFilter) {
 
         const showerCatalogItem = getCatalogShower(filter);
 
-        // Synthesize pool of pure falling meteors
-        const totalPool = state.densityLimit;
-        const sporadicCount = Math.floor(totalPool * 0.15);
-
+        // Pool of falling shooting stars
+        const totalPool = Math.max(15, Math.min(60, state.densityLimit));
         for (let i = 0; i < totalPool; i++) {
-            const isSporadic = i < sporadicCount;
             const meteorData = state.meteors3DData[i % Math.max(1, state.meteors3DData.length)] || {
                 id: `MTR-${1000 + i}`,
                 shower: showerCatalogItem.name,
@@ -576,8 +579,8 @@ async function load3DData(filter = state.activeStreamFilter) {
                 mass: 0.0002
             };
 
-            const meteor = new RealisticMeteor(meteorData, isSporadic);
-            // Stagger initial progress so meteors are actively falling at startup
+            const meteor = new FallingShootingStar(meteorData, showerCatalogItem.color);
+            // Stagger initial progress so meteors are actively falling one after another
             meteor.progress = Math.random();
             state.activeMeteors.push(meteor);
         }
@@ -592,12 +595,12 @@ function manageMeteorWaves(delta, effectiveSpeed) {
     if (!state.showMeteors) return;
 
     spawnTimer += delta * effectiveSpeed;
-    if (spawnTimer > 0.07) {
+    // Launch next shooting star in smooth staggered intervals
+    if (spawnTimer > 0.08) {
         spawnTimer = 0;
         const inactive = state.activeMeteors.filter(m => !m.active);
-        const batchSize = Math.min(3, inactive.length);
-        for (let i = 0; i < batchSize; i++) {
-            inactive[i].reset();
+        if (inactive.length > 0) {
+            inactive[0].reset();
         }
     }
 
@@ -1121,19 +1124,19 @@ function onMouseMove(event) {
     mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
     raycaster.setFromCamera(mouse, camera);
-    const intersects = raycaster.intersectObjects(meteorGroup.children);
+    const intersects = raycaster.intersectObjects(meteorGroup.children, true);
 
     const tooltip = document.getElementById('meteor-tooltip');
     if (intersects.length > 0) {
         const item = intersects[0].object.userData;
         if (item && tooltip) {
             document.getElementById('tip-id').textContent = item.id || 'Observation ID';
-            document.getElementById('tip-shower').textContent = `${item.shower || 'Sporadic'} (${item.iau_code || 'SPO'})`;
-            document.getElementById('tip-vel').textContent = item.vgeo != null ? `${item.vgeo.toFixed(1)} km/s` : '-';
-            document.getElementById('tip-peak').textContent = item.peak != null ? `${item.peak.toFixed(1)} mag` : '-';
-            document.getElementById('tip-dur').textContent = item.duration != null ? `${item.duration.toFixed(2)}s` : '-';
-            document.getElementById('tip-loc').textContent = item.lat_beg != null ? `${item.lat_beg.toFixed(1)}°, ${item.lon_beg?.toFixed(1)}°` : 'Space Trajectory';
-            document.getElementById('tip-alt').textContent = item.ht_beg != null ? `${item.ht_beg.toFixed(1)} km` : '100 km';
+            document.getElementById('tip-shower').textContent = `${item.shower || 'Quadrantids'} (${item.iau_code || 'QUA'})`;
+            document.getElementById('tip-vel').textContent = item.vgeo != null ? `${item.vgeo.toFixed(1)} km/s` : '41.2 km/s';
+            document.getElementById('tip-peak').textContent = item.peak != null ? `${item.peak.toFixed(1)} mag` : '-0.3 mag';
+            document.getElementById('tip-dur').textContent = item.duration != null ? `${item.duration.toFixed(2)}s` : '0.5s';
+            document.getElementById('tip-loc').textContent = 'Atmospheric Entry';
+            document.getElementById('tip-alt').textContent = '95 km';
             tooltip.classList.remove('hidden');
         }
     } else if (tooltip) {
